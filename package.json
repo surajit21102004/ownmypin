@@ -1,0 +1,24 @@
+{
+  "name": "ownmypin-workspace",
+  "version": "1.0.0",
+  "description": "ownMyPin - Expo React Native (JavaScript) Mobile App & Express Node.js MySQL Backend",
+  "private": true,
+  "scripts": {
+    "start:be": "npm --prefix be start",
+    "dev:be": "npm --prefix be run dev",
+    "test:db": "npm --prefix be run test:db",
+    "start:app": "npm --prefix app start",
+    "android": "npm --prefix app run android",
+    "ios": "npm --prefix app run ios",
+    "web": "npm --prefix app run web"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "nodejs",
+    "express",
+    "mysql"
+  ],
+  "author": "",
+  "license": "ISC"
+}
