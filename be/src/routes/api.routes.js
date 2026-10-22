@@ -3,6 +3,7 @@ const healthRoutes = require('./health.routes');
 const authRoutes = require('./auth.routes');
 const registrationRoutes = require('./registration.routes');
 const adminRoutes = require('./admin.routes');
+const uploadRoutes = require('./upload.routes');
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/registrations', registrationRoutes);
 router.use('/admin', adminRoutes);
+router.use('/upload', uploadRoutes);
 
 // Base API route info
 router.get('/', (req, res) => {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TouchableOpacity,
   TextInput,
@@ -11,7 +12,8 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import { submitRegistration, getMyRegistration } from '../services/api';
+import * as ImagePicker from 'expo-image-picker';
+import { submitRegistration, getMyRegistration, uploadImageToServer } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +33,8 @@ export default function RegisterFlow({
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingSelfie, setIsUploadingSelfie] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [registration, setRegistration] = useState(initialRegistration);
 
   // Form State
@@ -50,11 +54,8 @@ export default function RegisterFlow({
     landmark: 'Near Hanuman Mandir',
     latitude: 22.7126,
     longitude: 88.3524,
-    selfieUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
-    propertyPhotos: [
-      'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=300',
-      'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=300',
-    ],
+    selfieUrl: null,
+    propertyPhotos: [],
     agreedToPolicy: true,
   });
 
@@ -114,27 +115,129 @@ export default function RegisterFlow({
     }
   };
 
-  const handleCaptureSelfie = () => {
-    Alert.alert('Camera Opened', 'Selfie captured successfully with in-app camera verification.');
-    setFormData((prev) => ({
-      ...prev,
-      selfieUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-    }));
+  // 1. Capture Live Selfie using Device Camera
+  const handleCaptureSelfie = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Camera permission is required to capture live selfie.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        cameraType: ImagePicker.CameraType?.front || 'front',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setIsUploadingSelfie(true);
+        const uploadedUrl = await uploadImageToServer(asset.uri, 'selfie', asset.base64);
+        setIsUploadingSelfie(false);
+
+        setFormData((prev) => ({
+          ...prev,
+          selfieUrl: uploadedUrl,
+        }));
+        Alert.alert('Success', 'Live selfie captured & uploaded successfully!');
+      }
+    } catch (err) {
+      setIsUploadingSelfie(false);
+      Alert.alert('Camera Error', err.message || 'Could not open camera.');
+    }
   };
 
-  const handleAddPhoto = () => {
+  // 2. Pick Property Photo from Device Storage / Gallery or Camera
+  const handleAddPhoto = async () => {
     if (formData.propertyPhotos.length >= 5) {
       Alert.alert('Limit Reached', 'You can upload up to 5 property photos.');
       return;
     }
+
+    Alert.alert(
+      'Add Property Photo',
+      'Select photo source:',
+      [
+        {
+          text: '📁 Pick from Storage / Gallery',
+          onPress: async () => {
+            try {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Storage permission is required to select photos.');
+                return;
+              }
+
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions?.Images || 'Images',
+                allowsEditing: true,
+                quality: 0.7,
+                base64: true,
+              });
+
+              if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                setIsUploadingPhoto(true);
+                const uploadedUrl = await uploadImageToServer(asset.uri, 'property', asset.base64);
+                setIsUploadingPhoto(false);
+
+                setFormData((prev) => ({
+                  ...prev,
+                  propertyPhotos: [...prev.propertyPhotos, uploadedUrl],
+                }));
+              }
+            } catch (err) {
+              setIsUploadingPhoto(false);
+              Alert.alert('Storage Error', err.message || 'Could not pick image.');
+            }
+          },
+        },
+        {
+          text: '📷 Take Live Photo',
+          onPress: async () => {
+            try {
+              const { status } = await ImagePicker.requestCameraPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Camera permission is required.');
+                return;
+              }
+
+              const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                quality: 0.7,
+                base64: true,
+              });
+
+              if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                setIsUploadingPhoto(true);
+                const uploadedUrl = await uploadImageToServer(asset.uri, 'property', asset.base64);
+                setIsUploadingPhoto(false);
+
+                setFormData((prev) => ({
+                  ...prev,
+                  propertyPhotos: [...prev.propertyPhotos, uploadedUrl],
+                }));
+              }
+            } catch (err) {
+              setIsUploadingPhoto(false);
+              Alert.alert('Camera Error', err.message || 'Could not open camera.');
+            }
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleRemovePhoto = (indexToRemove) => {
     setFormData((prev) => ({
       ...prev,
-      propertyPhotos: [
-        ...prev.propertyPhotos,
-        `https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300`,
-      ],
+      propertyPhotos: prev.propertyPhotos.filter((_, idx) => idx !== indexToRemove),
     }));
-    Alert.alert('Photo Added', 'Property photo added to list.');
   };
 
   const handleSubmit = async () => {
@@ -552,10 +655,22 @@ export default function RegisterFlow({
             {/* Selfie Section */}
             <View style={styles.selfieContainer}>
               <View style={styles.selfieCircle}>
-                <Text style={styles.selfieEmoji}>🤳</Text>
+                {isUploadingSelfie ? (
+                  <ActivityIndicator size="small" color="#152238" />
+                ) : formData.selfieUrl ? (
+                  <Image source={{ uri: formData.selfieUrl }} style={styles.selfieImage} />
+                ) : (
+                  <Text style={styles.selfieEmoji}>🤳</Text>
+                )}
               </View>
-              <TouchableOpacity style={styles.cameraBtn} onPress={handleCaptureSelfie}>
-                <Text style={styles.cameraBtnText}>Open camera</Text>
+              <TouchableOpacity
+                style={[styles.cameraBtn, isUploadingSelfie && styles.buttonDisabled]}
+                onPress={handleCaptureSelfie}
+                disabled={isUploadingSelfie}
+              >
+                <Text style={styles.cameraBtnText}>
+                  {formData.selfieUrl ? '🔄 Retake live selfie' : '📷 Open camera'}
+                </Text>
               </TouchableOpacity>
               <Text style={styles.selfieNote}>
                 Selfie must be taken in the app. Gallery upload is not allowed.
@@ -564,15 +679,35 @@ export default function RegisterFlow({
 
             {/* Property Photos Grid */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Property photos (up to 5)</Text>
+              <View style={styles.photoHeaderRow}>
+                <Text style={styles.fieldLabel}>Property photos (up to 5)</Text>
+                <Text style={styles.photoCountBadge}>{formData.propertyPhotos.length}/5</Text>
+              </View>
+
               <View style={styles.photosGrid}>
-                {formData.propertyPhotos.map((_, i) => (
-                  <View key={i} style={styles.photoThumb}>
-                    <Text style={styles.photoThumbText}>Photo {i + 1}</Text>
+                {formData.propertyPhotos.map((photoUri, i) => (
+                  <View key={i} style={styles.photoThumbCard}>
+                    <Image source={{ uri: photoUri }} style={styles.photoThumbImg} />
+                    <TouchableOpacity
+                      style={styles.removePhotoBtn}
+                      onPress={() => handleRemovePhoto(i)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.removePhotoText}>✕</Text>
+                    </TouchableOpacity>
                   </View>
                 ))}
-                {formData.propertyPhotos.length < 5 && (
+
+                {isUploadingPhoto && (
+                  <View style={[styles.photoThumb, styles.photoUploading]}>
+                    <ActivityIndicator size="small" color="#F59E0B" />
+                    <Text style={styles.uploadingText}>Uploading...</Text>
+                  </View>
+                )}
+
+                {formData.propertyPhotos.length < 5 && !isUploadingPhoto && (
                   <TouchableOpacity style={styles.addPhotoBtn} onPress={handleAddPhoto}>
+                    <Text style={styles.addPhotoIcon}>📁</Text>
                     <Text style={styles.addPhotoText}>+ Add photo</Text>
                   </TouchableOpacity>
                 )}
@@ -808,15 +943,20 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   selfieCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: '#EFF6FF',
     borderWidth: 2,
     borderColor: '#BFDBFE',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
+    overflow: 'hidden',
+  },
+  selfieImage: {
+    width: '100%',
+    height: '100%',
   },
   selfieEmoji: {
     fontSize: 36,
@@ -839,14 +979,59 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 20,
   },
+  photoHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  photoCountBadge: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#D97706',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
   photosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
   },
+  photoThumbCard: {
+    width: (width - 70) / 3,
+    height: 80,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  photoThumbImg: {
+    width: '100%',
+    height: '100%',
+  },
+  removePhotoBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removePhotoText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 12,
+  },
   photoThumb: {
     width: (width - 70) / 3,
-    height: 75,
+    height: 80,
     borderRadius: 12,
     backgroundColor: '#EFF6FF',
     alignItems: 'center',
@@ -854,22 +1039,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#BFDBFE',
   },
-  photoThumbText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#3B82F6',
+  photoUploading: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  uploadingText: {
+    fontSize: 10,
+    color: '#B45309',
+    fontWeight: '700',
+    marginTop: 4,
   },
   addPhotoBtn: {
     width: (width - 70) / 3,
-    height: 75,
+    height: 80,
     borderRadius: 12,
     backgroundColor: '#F59E0B',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 2,
+  },
+  addPhotoIcon: {
+    fontSize: 18,
   },
   addPhotoText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   reviewCard: {

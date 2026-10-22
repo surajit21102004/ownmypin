@@ -31,6 +31,10 @@ if (process.env.NODE_ENV !== 'test') {
 const adminPath = path.join(__dirname, '../../admin');
 app.use('/admin', express.static(adminPath));
 
+// Serve Uploaded Files statically
+const uploadsPath = path.join(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsPath));
+
 // API Routes
 app.use('/api', apiRoutes);
 

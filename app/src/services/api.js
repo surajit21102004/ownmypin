@@ -99,6 +99,55 @@ export async function verifyOtp(phone, otp) {
 }
 
 /**
+ * Upload Image to server (selfie or property photo)
+ */
+export async function uploadImageToServer(imageUri, type = 'property', base64 = null) {
+  try {
+    // 1. Try base64 upload if available
+    if (base64) {
+      const res = await fetch(`${currentBaseUrl}/api/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          image: `data:image/jpeg;base64,${base64}`,
+          type,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        return `${currentBaseUrl}${data.url}`;
+      }
+    }
+
+    // 2. Try FormData multipart upload
+    const formData = new FormData();
+    const filename = imageUri.split('/').pop() || `${type}_${Date.now()}.jpg`;
+    formData.append('type', type);
+    formData.append('image', {
+      uri: Platform.OS === 'ios' ? imageUri.replace('file://', '') : imageUri,
+      name: filename,
+      type: 'image/jpeg',
+    });
+
+    const res = await fetch(`${currentBaseUrl}/api/upload`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: formData,
+    });
+    const data = await res.json();
+    if (data.success && data.url) {
+      return `${currentBaseUrl}${data.url}`;
+    }
+
+    // Fallback to local URI
+    return imageUri;
+  } catch (err) {
+    console.warn('Image upload error, using local URI fallback:', err.message);
+    return imageUri;
+  }
+}
+
+/**
  * Submit Registration
  */
 export async function submitRegistration(registrationData) {

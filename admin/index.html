@@ -690,12 +690,17 @@
       const photosContainer = document.getElementById('photosGrid');
       let photosHtml = '';
       if (selectedReg.selfie_url) {
-        photosHtml += `<div class="photo-thumb"><img src="${selectedReg.selfie_url}" alt="Selfie" /></div>`;
+        photosHtml += `<div class="photo-thumb" title="Applicant Selfie"><img src="${selectedReg.selfie_url}" alt="Selfie" /></div>`;
       } else {
         photosHtml += `<div class="photo-thumb">🤳 Selfie</div>`;
       }
 
-      for (let i = 1; i <= 4; i++) {
+      const propPhotos = Array.isArray(selectedReg.property_photos) ? selectedReg.property_photos : [];
+      propPhotos.forEach((photoUrl, idx) => {
+        photosHtml += `<div class="photo-thumb" title="Property Photo ${idx + 1}"><img src="${photoUrl}" alt="Property ${idx + 1}" /></div>`;
+      });
+
+      for (let i = propPhotos.length + 1; i <= 4; i++) {
         photosHtml += `<div class="photo-thumb">📷 Photo ${i}</div>`;
       }
       photosContainer.innerHTML = photosHtml;
