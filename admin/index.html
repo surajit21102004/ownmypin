@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OwnMyPin Admin - Registration Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sidebar-bg: #0d172a;
+      --sidebar-hover: #1e293b;
+      --primary-navy: #152238;
+      --accent-orange: #f59e0b;
+      --accent-orange-dark: #d97706;
+      --bg-page: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --success-green: #10b981;
+      --danger-red: #ef4444;
+      --selection-blue: #eff6ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background-color: var(--sidebar-bg);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      min-height: 100vh;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 18px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .menu-item {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #94a3b8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .menu-item:hover {
+      background-color: var(--sidebar-hover);
+      color: #ffffff;
+    }
+
+    .menu-item.active {
+      background-color: var(--accent-orange);
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    /* Main Content Area */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .top-header {
+      padding: 24px 32px;
+      background-color: transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .page-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+
+    .stats-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stat-pill {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .stat-pill strong {
+      color: var(--text-main);
+    }
+
+    /* Content Two-Column Grid */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      padding: 0 32px 32px 32px;
+      align-items: start;
+    }
+
+    /* Left Card: List */
+    .list-card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      overflow: hidden;
+    }
+
+    .list-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .list-table th {
+      padding: 14px 18px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      background-color: #fafafa;
+    }
+
+    .list-table td {
+      padding: 16px 18px;
+      font-size: 14px;
+      color: var(--text-main);
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .list-table tr:hover td {
+      background-color: #f8fafc;
+    }
+
+    .list-table tr.selected td {
+      background-color: var(--selection-blue);
+      font-weight: 600;
+      color: #1d4ed8;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    .status-pending { background: #fef3c7; color: #b45309; }
+    .status-approved { background: #d1fae5; color: #047857; }
+    .status-rejected { background: #fee2e2; color: #b91c1c; }
+
+    /* Right Card: Details */
+    .detail-card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      border: 1px solid var(--border-color);
+      padding: 28px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .applicant-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .avatar-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #64748b;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .applicant-meta h3 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .applicant-subinfo {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .property-tags {
+      display: inline-flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .prop-pill {
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    /* Address box */
+    .address-box {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--primary-navy);
+    }
+
+    /* Photos Grid */
+    .photos-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .photo-thumb {
+      aspect-ratio: 1;
+      background: #e2e8f0;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .photo-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Verification Checklist */
+    .checklist-container {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .check-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 10px;
+      background: var(--success-green);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    /* DIGIPIN Preview Card */
+    .pin-preview-card {
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .pin-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .pin-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--primary-navy);
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .pin-note {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Action Buttons */
+    .action-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-approve {
+      flex: 2;
+      background: var(--primary-navy);
+      color: #ffffff;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-approve:hover {
+      background: #0f172a;
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      flex: 1;
+      background: #ffffff;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .btn-outline:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .btn-reject {
+      color: var(--danger-red);
+      border-color: #fecaca;
+    }
+
+    .btn-reject:hover {
+      background: #fef2f2;
+      border-color: #f87171;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span style="font-size: 24px;">📌</span>
+      <span class="brand-title">OwnMyPin Admin</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item active">
+        <span>📋</span> New registrations
+      </li>
+      <li class="menu-item">
+        <span>✅</span> Verified users
+      </li>
+      <li class="menu-item">
+        <span>🏢</span> Business verification
+      </li>
+      <li class="menu-item">
+        <span>📢</span> Daily content and ads
+      </li>
+      <li class="menu-item">
+        <span>⭐</span> VIP PINs
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-wrapper">
+    <header class="top-header">
+      <h1 class="page-title">New registrations</h1>
+      <div class="stats-group">
+        <div class="stat-pill">Pending: <strong id="pendingCount">0</strong></div>
+        <div class="stat-pill">Approved today: <strong id="approvedTodayCount">0</strong></div>
+        <div class="stat-pill">Rejected: <strong id="rejectedCount">0</strong></div>
+      </div>
+    </header>
+
+    <div class="content-grid">
+      <!-- Left List Table -->
+      <section class="list-card">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>City</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="registrationsList">
+            <tr>
+              <td colspan="3" style="text-align: center; color: #94a3b8; padding: 30px;">
+                Loading registrations...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Right Detail Review Card -->
+      <section class="detail-card" id="detailCard">
+        <div class="applicant-top">
+          <div class="avatar-circle" id="applicantAvatar">👤</div>
+          <div class="applicant-meta">
+            <h3 id="applicantName">[Select an Applicant]</h3>
+            <div class="applicant-subinfo" id="applicantSubinfo">
+              DOB: --/--/---- • Age: -- • Guardian: --
+            </div>
+            <div class="property-tags" id="propertyTags">
+              <span class="prop-pill">[House]</span>
+              <span class="prop-pill">[Own]</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="address-box" id="addressBox">
+          Select an application from the left list to review details and approve a DIGIPIN.
+        </div>
+
+        <div class="photos-title">Selfie & Property Photos</div>
+        <div class="photos-grid" id="photosGrid">
+          <div class="photo-thumb">Selfie</div>
+          <div class="photo-thumb">Photo 1</div>
+          <div class="photo-thumb">Photo 2</div>
+          <div class="photo-thumb">Photo 3</div>
+          <div class="photo-thumb">Photo 4</div>
+        </div>
+
+        <div class="checklist-container">
+          <div class="check-item">
+            <span class="check-icon">✓</span> Selfie taken in the app
+          </div>
+          <div class="check-item">
+            <span class="check-icon">✓</span> Location verified on Google Map
+          </div>
+          <div class="check-item">
+            <span class="check-icon">✓</span> Age 16 or above
+          </div>
+          <div class="check-item">
+            <span class="check-icon">✓</span> Name matches government ID
+          </div>
+        </div>
+
+        <!-- DIGIPIN Box -->
+        <div class="pin-preview-card">
+          <div class="pin-label" id="pinBoxLabel">PIN generated on approval (SS-DD-NNNNNNNN)</div>
+          <div class="pin-display" id="pinDisplay">WB-09-45896524</div>
+          <div class="pin-note">Patterned numbers like 11111111 or 12345678 are never issued.</div>
+        </div>
+
+        <!-- Action Row -->
+        <div class="action-row" id="actionRow">
+          <button class="btn-approve" id="approveBtn" onclick="handleApprove()">
+            ✓ Approve and generate PIN
+          </button>
+          <button class="btn-outline" onclick="handleRequestChanges()">Request changes</button>
+          <button class="btn-outline btn-reject" onclick="handleReject()">Reject</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+      ? `${window.location.origin}/api`
+      : 'http://localhost:5000/api';
+
+    let allRegistrations = [];
+    let selectedReg = null;
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    async function loadRegistrations() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/registrations`);
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('pendingCount').textContent = data.metrics.pending;
+          document.getElementById('approvedTodayCount').textContent = data.metrics.approvedToday;
+          document.getElementById('rejectedCount').textContent = data.metrics.rejected;
+
+          allRegistrations = data.registrations;
+          renderList();
+          if (allRegistrations.length > 0) {
+            selectRegistration(allRegistrations[0].id);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load registrations:', err);
+        showToast('Error connecting to backend server');
+      }
+    }
+
+    function renderList() {
+      const tbody = document.getElementById('registrationsList');
+      if (allRegistrations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 20px;">No registrations found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = allRegistrations.map((reg) => {
+        const isSelected = selectedReg && selectedReg.id === reg.id;
+        const timeFormatted = new Date(reg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `
+          <tr class="${isSelected ? 'selected' : ''}" onclick="selectRegistration(${reg.id})">
+            <td>
+              <div style="font-weight: 700;">[${reg.full_name}]</div>
+              <span class="status-badge status-${reg.status}">${reg.status}</span>
+            </td>
+            <td>[${reg.city}]</td>
+            <td style="color: #64748b; font-size: 12px;">[${timeFormatted}]</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function calculateAge(dobStr) {
+      if (!dobStr) return '24';
+      const parts = dobStr.split(/[\/\-\.]/);
+      if (parts.length === 3) {
+        const year = parseInt(parts[2], 10);
+        if (!isNaN(year)) {
+          return new Date().getFullYear() - year;
+        }
+      }
+      return '22';
+    }
+
+    function selectRegistration(id) {
+      selectedReg = allRegistrations.find(r => r.id === id);
+      renderList();
+
+      if (!selectedReg) return;
+
+      const age = calculateAge(selectedReg.dob);
+      const guardianText = selectedReg.guardian_name ? selectedReg.guardian_name : (age >= 18 ? '[not needed]' : '[Required]');
+
+      document.getElementById('applicantAvatar').textContent = selectedReg.full_name.charAt(0).toUpperCase();
+      document.getElementById('applicantName').textContent = `[${selectedReg.full_name}]`;
+      document.getElementById('applicantSubinfo').textContent =
+        `DOB: [${selectedReg.dob}] • Age: [${age}] • Guardian: ${guardianText} • [${selectedReg.property_type}] - [${selectedReg.ownership_type}]`;
+
+      document.getElementById('propertyTags').innerHTML = `
+        <span class="prop-pill">[${selectedReg.property_type}]</span>
+        <span class="prop-pill">[${selectedReg.ownership_type}]</span>
+        <span class="prop-pill">Phone: ${selectedReg.phone}</span>
+      `;
+
+      document.getElementById('addressBox').innerHTML = `
+        <strong>Address:</strong> [${selectedReg.address_line}, ${selectedReg.city}, ${selectedReg.district}, ${selectedReg.state} ${selectedReg.pincode}].<br>
+        <strong>Landmark:</strong> [${selectedReg.landmark || 'None specified'}]<br>
+        <strong>Coordinates:</strong> Lat: ${selectedReg.latitude || '22.7126'}, Lng: ${selectedReg.longitude || '88.3524'}
+      `;
+
+      // Photos
+      const photosContainer = document.getElementById('photosGrid');
+      let photosHtml = '';
+      if (selectedReg.selfie_url) {
+        photosHtml += `<div class="photo-thumb"><img src="${selectedReg.selfie_url}" alt="Selfie" /></div>`;
+      } else {
+        photosHtml += `<div class="photo-thumb">🤳 Selfie</div>`;
+      }
+
+      for (let i = 1; i <= 4; i++) {
+        photosHtml += `<div class="photo-thumb">📷 Photo ${i}</div>`;
+      }
+      photosContainer.innerHTML = photosHtml;
+
+      // PIN Preview
+      const pinLabel = document.getElementById('pinBoxLabel');
+      const pinDisplay = document.getElementById('pinDisplay');
+      const approveBtn = document.getElementById('approveBtn');
+
+      if (selectedReg.status === 'approved' && selectedReg.pin_code) {
+        pinLabel.textContent = 'VERIFIED OWNMIPIN (APPROVED)';
+        pinDisplay.textContent = selectedReg.pin_code;
+        pinDisplay.style.color = '#10b981';
+        approveBtn.textContent = '✓ Already Approved';
+        approveBtn.disabled = true;
+        approveBtn.style.opacity = '0.6';
+      } else {
+        pinLabel.textContent = 'PIN generated on approval (SS-DD-NNNNNNNN)';
+        const previewPin = `${selectedReg.state_code || 'WB'}-${selectedReg.district_code || '09'}-45896524`;
+        pinDisplay.textContent = previewPin;
+        pinDisplay.style.color = '#152238';
+        approveBtn.textContent = '✓ Approve and generate PIN';
+        approveBtn.disabled = false;
+        approveBtn.style.opacity = '1';
+      }
+    }
+
+    async function handleApprove() {
+      if (!selectedReg) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin/registrations/${selectedReg.id}/approve`, {
+          method: 'POST',
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`PIN ${data.pinCode} generated & approved!`);
+          await loadRegistrations();
+        } else {
+          showToast(data.message || 'Approval failed');
+        }
+      } catch (err) {
+        showToast('Error approving registration');
+      }
+    }
+
+    async function handleReject() {
+      if (!selectedReg) return;
+      const reason = prompt('Please enter rejection reason:', 'Details could not be verified with government records');
+      if (!reason) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/registrations/${selectedReg.id}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Registration marked as rejected');
+          await loadRegistrations();
+        }
+      } catch (err) {
+        showToast('Error rejecting registration');
+      }
+    }
+
+    async function handleRequestChanges() {
+      if (!selectedReg) return;
+      const note = prompt('What changes are requested from applicant?', 'Please re-upload a clearer selfie and confirm landmark.');
+      if (!note) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/registrations/${selectedReg.id}/request-changes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Changes requested from applicant');
+          await loadRegistrations();
+        }
+      } catch (err) {
+        showToast('Error requesting changes');
+      }
+    }
+
+    // Initialize
+    loadRegistrations();
+  </script>
+</body>
+</html>

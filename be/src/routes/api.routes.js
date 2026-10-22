@@ -1,10 +1,16 @@
 const express = require('express');
 const healthRoutes = require('./health.routes');
+const authRoutes = require('./auth.routes');
+const registrationRoutes = require('./registration.routes');
+const adminRoutes = require('./admin.routes');
 
 const router = express.Router();
 
 // Mount sub-routers
 router.use('/health', healthRoutes);
+router.use('/auth', authRoutes);
+router.use('/registrations', registrationRoutes);
+router.use('/admin', adminRoutes);
 
 // Base API route info
 router.get('/', (req, res) => {
@@ -15,6 +21,19 @@ router.get('/', (req, res) => {
     endpoints: {
       health: '/api/health',
       dbHealth: '/api/health/db',
+      auth: {
+        sendOtp: 'POST /api/auth/send-otp',
+        verifyOtp: 'POST /api/auth/verify-otp',
+      },
+      registrations: {
+        create: 'POST /api/registrations',
+        status: 'GET /api/registrations/my-status/:phone',
+      },
+      admin: {
+        list: 'GET /api/admin/registrations',
+        approve: 'POST /api/admin/registrations/:id/approve',
+        reject: 'POST /api/admin/registrations/:id/reject',
+      },
     },
   });
 });

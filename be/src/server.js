@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -13,24 +14,34 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Security & Utility Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Allows admin panel inline scripts and fonts
+  })
+);
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
+// Serve Admin Panel as static web app
+const adminPath = path.join(__dirname, '../../admin');
+app.use('/admin', express.static(adminPath));
+
 // API Routes
 app.use('/api', apiRoutes);
 
-// Root route
+// Root route redirects to /admin or returns API health
 app.get('/', (req, res) => {
   res.json({
     app: 'ownMyPin Backend Server',
     status: 'Running',
     version: '1.0.0',
-    documentation: '/api',
+    adminPanel: `http://localhost:${PORT}/admin`,
+    apiDocumentation: `http://localhost:${PORT}/api`,
   });
 });
 
@@ -43,7 +54,8 @@ const server = app.listen(PORT, async () => {
   console.log(`===============================================`);
   console.log(` ownMyPin Backend Server running on port ${PORT}`);
   console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(` API URL: http://localhost:${PORT}/api`);
+  console.log(` API URL:     http://localhost:${PORT}/api`);
+  console.log(` Admin Panel: http://localhost:${PORT}/admin`);
   console.log(`===============================================`);
 
   // Verify DB on boot
