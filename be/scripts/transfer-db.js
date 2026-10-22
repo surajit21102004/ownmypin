@@ -12,8 +12,8 @@ const SOURCE_CONFIG = {
 };
 
 const TARGET_CONFIG = {
-  host: process.env.DB_HOST || 's1-nnvp.crazzydns.com',
-  port: Number(process.env.DB_PORT) || 3306,
+  host: 's4-coaz.crazzydns.com',
+  port: 3306,
   user: 'studein_admin',
   password: 'Surajit@21',
   database: 'studein_ownmypin',
