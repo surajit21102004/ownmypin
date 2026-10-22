@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
+import ServerStatusModal from '../components/ServerStatusModal';
+import { checkBackendHealth } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -16,13 +18,51 @@ export default function WelcomeScreen({ onNavigateToRegister, onNavigateToLogin 
   const [selectedLang, setSelectedLang] = useState('English');
   const [showLangModal, setShowLangModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showServerModal, setShowServerModal] = useState(false);
+  const [serverOnline, setServerOnline] = useState(null);
+
+  useEffect(() => {
+    checkHealth();
+  }, []);
+
+  const checkHealth = async () => {
+    const res = await checkBackendHealth();
+    setServerOnline(res.ok);
+  };
 
   const languages = ['English', 'हिंदी (Hindi)', 'বাংলা (Bengali)'];
 
   return (
     <View style={styles.container}>
-      {/* Top Bar: Language Dropdown */}
+      {/* Top Bar: Server Status & Language Dropdown */}
       <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.serverPill}
+          activeOpacity={0.8}
+          onPress={() => setShowServerModal(true)}
+        >
+          <View
+            style={[
+              styles.serverDot,
+              {
+                backgroundColor:
+                  serverOnline === true
+                    ? '#10B981'
+                    : serverOnline === false
+                    ? '#EF4444'
+                    : '#F59E0B',
+              },
+            ]}
+          />
+          <Text style={styles.serverPillText}>
+            {serverOnline === true
+              ? 'Backend: Online'
+              : serverOnline === false
+              ? 'Offline (Tap)'
+              : 'Checking...'}
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.langPill}
           activeOpacity={0.8}
@@ -169,6 +209,15 @@ export default function WelcomeScreen({ onNavigateToRegister, onNavigateToLogin 
           </View>
         </View>
       </Modal>
+
+      {/* Server Settings Modal */}
+      <ServerStatusModal
+        visible={showServerModal}
+        onClose={() => {
+          setShowServerModal(false);
+          checkHealth();
+        }}
+      />
     </View>
   );
 }
@@ -179,10 +228,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   topBar: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 16,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  serverPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    gap: 6,
+  },
+  serverDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  serverPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
   },
   langPill: {
     flexDirection: 'row',

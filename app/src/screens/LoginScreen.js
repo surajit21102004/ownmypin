@@ -12,7 +12,8 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { sendOtp, verifyOtp } from '../services/api';
+import { sendOtp, verifyOtp, getApiBaseUrl } from '../services/api';
+import ServerStatusModal from '../components/ServerStatusModal';
 
 export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [phone, setPhone] = useState('9876543210');
@@ -20,6 +21,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [showServerModal, setShowServerModal] = useState(false);
 
   // Refs for OTP inputs
   const inputRefs = useRef([]);
@@ -55,7 +57,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
       setStatusMessage(`OTP sent! (Use test code: ${res.otp || '123456'})`);
       setOtp(['1', '2', '3', '4', '5', '6']);
     } else {
-      Alert.alert('Error', res.message || 'Could not send OTP');
+      Alert.alert('Connection Notice', res.message || 'Could not send OTP. Tap Server Settings to check IP.');
     }
   };
 
@@ -80,7 +82,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         registration: res.registration,
       });
     } else {
-      Alert.alert('Verification Failed', res.message || 'Invalid OTP code.');
+      Alert.alert('Notice', `${res.message || 'Verification failed.'}\n\nTip: If your phone is on Wi-Fi, tap the server button at the top to confirm your PC's IP.`);
     }
   };
 
@@ -93,7 +95,7 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Back Button */}
+        {/* Top Back Button & Server Settings */}
         <View style={styles.topBar}>
           <TouchableOpacity
             style={styles.backButton}
@@ -101,6 +103,13 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
             activeOpacity={0.7}
           >
             <Text style={styles.backArrow}>‹</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.serverPill}
+            onPress={() => setShowServerModal(true)}
+          >
+            <Text style={styles.serverPillText}>⚙️ Server IP</Text>
           </TouchableOpacity>
         </View>
 
@@ -200,6 +209,12 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Server Settings Modal */}
+      <ServerStatusModal
+        visible={showServerModal}
+        onClose={() => setShowServerModal(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -215,6 +230,9 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
   },
   backButton: {
@@ -237,6 +255,19 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     lineHeight: 32,
     marginTop: -2,
+  },
+  serverPill: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  serverPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
   },
   logoWrapper: {
     alignItems: 'center',
