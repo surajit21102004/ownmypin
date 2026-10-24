@@ -2,7 +2,7 @@ import { Platform, NativeModules } from 'react-native';
 
 const BACKEND_PORT = 5000;
 // Your computer's current Wi-Fi IP address
-export const LOCAL_PC_IP = '192.168.0.101';
+export const LOCAL_PC_IP = '192.168.0.100';
 
 /**
  * Automatically determine the backend URL:
@@ -48,6 +48,16 @@ export function setApiBaseUrl(url) {
 
 export function getApiBaseUrl() {
   return currentBaseUrl;
+}
+
+export function getPinQrCodeUrl(pin) {
+  const clean = (pin || 'WB-09-45896524').trim().toUpperCase();
+  return `${currentBaseUrl}/api/pins/qr/${encodeURIComponent(clean)}?format=png`;
+}
+
+export function getPinLocationUrl(pin) {
+  const clean = (pin || 'WB-09-45896524').trim().toUpperCase();
+  return `${currentBaseUrl}/location?pin=${encodeURIComponent(clean)}`;
 }
 
 /**
@@ -193,6 +203,30 @@ export async function getMyRegistration(phone) {
 }
 
 /**
+ * Update registration profile details (social profiles, privacy mode, etc.)
+ */
+export async function updateProfileOnServer(updateData) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(`${currentBaseUrl}/api/registrations/update-profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(updateData),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to update profile (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
  * Quick Health Check
  */
 export async function checkBackendHealth() {
@@ -212,3 +246,97 @@ export async function checkBackendHealth() {
     return { ok: false, error: error.message, url: currentBaseUrl };
   }
 }
+
+/**
+ * Search PIN or Location Profile
+ */
+export async function searchPin(query) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(`${currentBaseUrl}/api/pins/search?q=${encodeURIComponent(query)}`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to search pin (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
+ * Get Daily News (DSC)
+ */
+export async function getDailyNews() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(`${currentBaseUrl}/api/content/news`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return await res.json();
+  } catch (error) {
+    return { success: false, news: [], message: error.message };
+  }
+}
+
+/**
+ * Get Ads & Monetization Settings
+ */
+export async function getAdsAndSettings() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(`${currentBaseUrl}/api/content/ads`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return await res.json();
+  } catch (error) {
+    return { success: false, ads: [], settings: { adMode: 'manual' }, message: error.message };
+  }
+}
+
+/**
+ * Get Notifications & Shop Ads
+ */
+export async function getNotifications() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(`${currentBaseUrl}/api/content/notifications`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return await res.json();
+  } catch (error) {
+    return { success: false, notifications: [], unreadCount: 0, message: error.message };
+  }
+}
+
+/**
+ * Get Nearby Businesses
+ */
+export async function getNearbyBusinesses() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(`${currentBaseUrl}/api/content/nearby`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return await res.json();
+  } catch (error) {
+    return { success: false, businesses: [], message: error.message };
+  }
+}
+

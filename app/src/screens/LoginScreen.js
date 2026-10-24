@@ -15,9 +15,9 @@ import {
 import { sendOtp, verifyOtp, getApiBaseUrl } from '../services/api';
 import ServerStatusModal from '../components/ServerStatusModal';
 
-export default function LoginScreen({ onBack, onLoginSuccess }) {
-  const [phone, setPhone] = useState('9876543210');
-  const [otp, setOtp] = useState(['1', '2', '3', '4', '5', '6']);
+export default function LoginScreen({ onBack, onLoginSuccess, mode = 'login' }) {
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -54,8 +54,9 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
     setIsResending(false);
 
     if (res.success) {
-      setStatusMessage(`OTP sent! (Use test code: ${res.otp || '123456'})`);
-      setOtp(['1', '2', '3', '4', '5', '6']);
+      const code = res.otp ? String(res.otp) : '123456';
+      setStatusMessage(`OTP sent! (Code: ${code})`);
+      setOtp(code.split('').slice(0, 6));
     } else {
       Alert.alert('Connection Notice', res.message || 'Could not send OTP. Tap Server Settings to check IP.');
     }
@@ -124,9 +125,11 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
 
         {/* Header */}
         <View style={styles.headerSection}>
-          <Text style={styles.title}>Login</Text>
+          <Text style={styles.title}>{mode === 'register' ? 'Create Account' : 'Login'}</Text>
           <Text style={styles.subtitle}>
-            Enter your mobile number to get an OTP.
+            {mode === 'register'
+              ? 'Enter your mobile number to get an OTP and register your PIN.'
+              : 'Enter your mobile number to get an OTP.'}
           </Text>
         </View>
 
@@ -207,6 +210,17 @@ export default function LoginScreen({ onBack, onLoginSuccess }) {
               <Text style={styles.secondaryBtnText}>Resend OTP</Text>
             )}
           </TouchableOpacity>
+        </View>
+
+        {/* Recognised by Startup India */}
+        <View style={styles.startupBadgeRow}>
+          <Text style={styles.startupLabel}>Recognised by </Text>
+          <Text style={styles.startupHash}>#</Text>
+          <Image
+            source={require('../../assets/startupindia.png')}
+            style={styles.startupLogo}
+            resizeMode="contain"
+          />
         </View>
       </ScrollView>
 
@@ -406,5 +420,27 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  startupBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 28,
+    marginBottom: 8,
+  },
+  startupLabel: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  startupHash: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#F97316',
+    marginRight: 2,
+  },
+  startupLogo: {
+    height: 28,
+    width: 110,
   },
 });

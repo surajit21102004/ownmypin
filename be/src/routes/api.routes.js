@@ -4,6 +4,8 @@ const authRoutes = require('./auth.routes');
 const registrationRoutes = require('./registration.routes');
 const adminRoutes = require('./admin.routes');
 const uploadRoutes = require('./upload.routes');
+const pinsRoutes = require('./pins.routes');
+const contentRoutes = require('./content.routes');
 
 const router = express.Router();
 
@@ -13,6 +15,8 @@ router.use('/auth', authRoutes);
 router.use('/registrations', registrationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/pins', pinsRoutes);
+router.use('/content', contentRoutes);
 
 // Base API route info
 router.get('/', (req, res) => {

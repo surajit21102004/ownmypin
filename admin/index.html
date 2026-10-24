@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OwnMyPin Admin - Registration Verification</title>
+  <title>OwnMyPin Admin - Control & Verification Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap"
+    rel="stylesheet">
   <style>
     :root {
       --sidebar-bg: #0d172a;
       --sidebar-hover: #1e293b;
-      --primary-navy: #152238;
+      --primary-navy: #112240;
       --accent-orange: #f59e0b;
       --accent-orange-dark: #d97706;
-      --bg-page: #f1f5f9;
+      --bg-page: #f8fafc;
       --card-bg: #ffffff;
       --text-main: #0f172a;
       --text-muted: #64748b;
@@ -41,7 +44,7 @@
 
     /* Sidebar */
     .sidebar {
-      width: 260px;
+      width: 270px;
       background-color: var(--sidebar-bg);
       color: #fff;
       display: flex;
@@ -135,19 +138,24 @@
       font-size: 13px;
       font-weight: 600;
       color: var(--text-muted);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     }
 
     .stat-pill strong {
       color: var(--text-main);
     }
 
-    /* Content Two-Column Grid */
+    /* Content Views */
+    .view-container {
+      display: block;
+      padding: 0 32px 32px 32px;
+    }
+
+    /* Content Two-Column Grid for Registrations */
     .content-grid {
       display: grid;
       grid-template-columns: 360px 1fr;
       gap: 24px;
-      padding: 0 32px 32px 32px;
       align-items: start;
     }
 
@@ -156,7 +164,7 @@
       background: var(--card-bg);
       border-radius: 18px;
       border: 1px solid var(--border-color);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
       overflow: hidden;
     }
 
@@ -204,9 +212,20 @@
       text-transform: capitalize;
     }
 
-    .status-pending { background: #fef3c7; color: #b45309; }
-    .status-approved { background: #d1fae5; color: #047857; }
-    .status-rejected { background: #fee2e2; color: #b91c1c; }
+    .status-pending {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .status-approved {
+      background: #d1fae5;
+      color: #047857;
+    }
+
+    .status-rejected {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
 
     /* Right Card: Details */
     .detail-card {
@@ -214,7 +233,7 @@
       border-radius: 18px;
       border: 1px solid var(--border-color);
       padding: 28px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
     }
 
     .applicant-top {
@@ -297,17 +316,15 @@
 
     .photo-thumb {
       aspect-ratio: 1;
-      background: #e2e8f0;
-      border-radius: 12px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #94a3b8;
-      font-size: 12px;
-      font-weight: 600;
-      border: 1px solid var(--border-color);
-      overflow: hidden;
       cursor: pointer;
+      position: relative;
     }
 
     .photo-thumb img {
@@ -316,119 +333,131 @@
       object-fit: cover;
     }
 
+    .photo-badge {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      background: rgba(15, 23, 42, 0.75);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .photo-placeholder {
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
+      padding: 6px;
+    }
+
     /* Verification Checklist */
     .checklist-container {
-      background: #ffffff;
+      background: #fafafa;
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      padding: 16px;
+      padding: 14px 18px;
       margin-bottom: 24px;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
 
     .check-item {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       font-size: 13px;
       font-weight: 600;
       color: #334155;
     }
 
     .check-icon {
-      width: 20px;
-      height: 20px;
-      border-radius: 10px;
-      background: var(--success-green);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
+      color: var(--success-green);
       font-weight: 800;
+      font-size: 14px;
     }
 
-    /* DIGIPIN Preview Card */
+    /* DIGIPIN Card */
     .pin-preview-card {
-      background: #f8fafc;
-      border: 2px dashed #cbd5e1;
-      border-radius: 16px;
-      padding: 20px;
+      background: #0f172a;
+      border-radius: 14px;
+      padding: 18px 22px;
       margin-bottom: 24px;
-      text-align: center;
+      color: #fff;
     }
 
     .pin-label {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      color: #94a3b8;
       margin-bottom: 6px;
     }
 
     .pin-display {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 32px;
+      font-size: 24px;
       font-weight: 800;
-      color: var(--primary-navy);
-      letter-spacing: 2px;
-      margin-bottom: 6px;
+      letter-spacing: 1px;
+      color: #f59e0b;
+      margin-bottom: 4px;
     }
 
     .pin-note {
-      font-size: 12px;
-      color: var(--text-muted);
+      font-size: 11px;
+      color: #64748b;
     }
 
     /* Action Buttons */
     .action-row {
       display: flex;
-      align-items: center;
       gap: 12px;
+    }
+
+    button {
+      font-family: inherit;
     }
 
     .btn-approve {
       flex: 2;
-      background: var(--primary-navy);
-      color: #ffffff;
+      background: var(--accent-orange);
+      color: #0f172a;
       border: none;
       padding: 14px 20px;
       border-radius: 12px;
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      transition: opacity 0.15s ease;
     }
 
     .btn-approve:hover {
-      background: #0f172a;
-      transform: translateY(-1px);
+      background: var(--accent-orange-dark);
+      color: #ffffff;
     }
 
     .btn-outline {
       flex: 1;
       background: #ffffff;
-      color: var(--text-main);
       border: 1px solid var(--border-color);
+      color: var(--text-main);
       padding: 14px 16px;
       border-radius: 12px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
+      transition: background 0.15s ease;
     }
 
     .btn-outline:hover {
       background: #f8fafc;
-      border-color: #cbd5e1;
     }
 
     .btn-reject {
@@ -437,22 +466,215 @@
     }
 
     .btn-reject:hover {
-      background: #fef2f2;
-      border-color: #f87171;
+      background: #fee2e2;
     }
 
-    /* Toast Notification */
+    /* Form Styles for News, Ads, Settings */
+    .form-card {
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid var(--border-color);
+      padding: 28px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      margin-bottom: 24px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .form-col-full {
+      grid-column: 1 / -1;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-input,
+    .form-textarea,
+    .form-select {
+      font-family: inherit;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      font-size: 14px;
+      color: var(--text-main);
+      background: #f8fafc;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: #ffffff;
+    }
+
+    .form-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    /* Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .item-card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .item-card-img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      background: #e2e8f0;
+    }
+
+    .item-card-body {
+      padding: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .item-card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .item-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .item-card-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .item-card-desc {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      flex: 1;
+    }
+
+    .item-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-delete {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Switch toggle */
+    .switch-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #cbd5e1;
+      transition: .3s;
+      border-radius: 28px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: #0284c7;
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(24px);
+    }
+
+    /* Toast */
     .toast {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
+      bottom: 30px;
+      right: 30px;
       background: #0f172a;
-      color: #ffffff;
-      padding: 12px 20px;
+      color: #fff;
+      padding: 14px 24px;
       border-radius: 12px;
       font-size: 14px;
       font-weight: 600;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
       transform: translateY(100px);
       opacity: 0;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -463,31 +685,98 @@
       transform: translateY(0);
       opacity: 1;
     }
+
+    /* Modal */
+    .photo-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      padding: 24px;
+    }
+
+    .photo-modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .photo-modal-content {
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      max-width: 90vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .photo-modal-header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      background: #fafafa;
+    }
+
+    .photo-modal-body {
+      padding: 16px;
+      background: #0b1120;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-modal-img {
+      max-width: 80vw;
+      max-height: 75vh;
+      object-fit: contain;
+    }
   </style>
 </head>
+
 <body>
 
   <!-- Left Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <span style="font-size: 24px;">📌</span>
+      <span style="font-size: 24px;">📍</span>
       <span class="brand-title">OwnMyPin Admin</span>
     </div>
+    <div style="padding: 10px 18px 14px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+      <div style="font-size: 11px; color: #94a3b8; font-weight: 600; margin-bottom: 6px;">Recognised by <span
+          style="color: #f97316; font-weight: 800;">#</span></div>
+      <div
+        style="background: #ffffff; border-radius: 8px; padding: 6px 12px; display: inline-flex; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+        <img src="startupindia.png" alt="Startup India" style="height: 22px; width: auto; object-fit: contain;" />
+      </div>
+    </div>
     <ul class="sidebar-menu">
-      <li class="menu-item active">
+      <li class="menu-item active" onclick="switchAdminTab('registrations', this)">
         <span>📋</span> New registrations
       </li>
-      <li class="menu-item">
-        <span>✅</span> Verified users
+      <li class="menu-item" onclick="switchAdminTab('news', this)">
+        <span>📰</span> Daily News (DSC)
       </li>
-      <li class="menu-item">
-        <span>🏢</span> Business verification
+      <li class="menu-item" onclick="switchAdminTab('ads', this)">
+        <span>📢</span> Ads & Nearby Shops
       </li>
-      <li class="menu-item">
-        <span>📢</span> Daily content and ads
+      <li class="menu-item" onclick="switchAdminTab('monetization', this)">
+        <span>⚙️</span> Google Ads & Settings
       </li>
-      <li class="menu-item">
-        <span>⭐</span> VIP PINs
+      <li class="menu-item" onclick="switchAdminTab('verified', this)">
+        <span>✅</span> Verified PINs Directory
       </li>
     </ul>
   </aside>
@@ -495,7 +784,7 @@
   <!-- Main Content Area -->
   <main class="main-wrapper">
     <header class="top-header">
-      <h1 class="page-title">New registrations</h1>
+      <h1 class="page-title" id="pageTitle">New registrations</h1>
       <div class="stats-group">
         <div class="stat-pill">Pending: <strong id="pendingCount">0</strong></div>
         <div class="stat-pill">Approved today: <strong id="approvedTodayCount">0</strong></div>
@@ -503,99 +792,381 @@
       </div>
     </header>
 
-    <div class="content-grid">
-      <!-- Left List Table -->
-      <section class="list-card">
+    <!-- VIEW 1: REGISTRATIONS REVIEW -->
+    <div id="viewRegistrations" class="view-container">
+      <div class="content-grid">
+        <!-- Left List Table -->
+        <section class="list-card">
+          <table class="list-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>City</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody id="registrationsList">
+              <tr>
+                <td colspan="3" style="text-align: center; color: #94a3b8; padding: 30px;">
+                  Loading registrations...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Right Detail Review Card -->
+        <section class="detail-card" id="detailCard">
+          <div class="applicant-top">
+            <div class="avatar-circle" id="applicantAvatar">👤</div>
+            <div class="applicant-meta">
+              <h3 id="applicantName">Select an Applicant</h3>
+              <div class="applicant-subinfo" id="applicantSubinfo">
+                DOB: --/--/---- • Age: -- • Guardian: --
+              </div>
+              <div class="property-tags" id="propertyTags">
+                <span class="prop-pill">House</span>
+                <span class="prop-pill">Own</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="address-box" id="addressBox">
+            Select an application from the left list to review details and approve a DIGIPIN.
+          </div>
+
+          <div class="photos-title">Selfie & Property Photos</div>
+          <div class="photos-grid" id="photosGrid">
+            <div class="photo-thumb">Selfie</div>
+            <div class="photo-thumb">Photo 1</div>
+            <div class="photo-thumb">Photo 2</div>
+            <div class="photo-thumb">Photo 3</div>
+            <div class="photo-thumb">Photo 4</div>
+          </div>
+
+          <div class="checklist-container">
+            <div class="check-item"><span class="check-icon">✓</span> Selfie taken in the app</div>
+            <div class="check-item"><span class="check-icon">✓</span> Location verified on Google Map</div>
+            <div class="check-item"><span class="check-icon">✓</span> Age 16 or above</div>
+            <div class="check-item"><span class="check-icon">✓</span> Name matches government ID</div>
+          </div>
+
+          <!-- DIGIPIN Box with Live QR Generator -->
+          <div class="pin-preview-card">
+            <div class="pin-label" id="pinBoxLabel">PIN generated on approval (SS-DD-NNNNNNNN)</div>
+            <div class="pin-display" id="pinDisplay">WB-09-45896524</div>
+            <div class="pin-note">Patterned numbers like 11111111 or 12345678 are never issued.</div>
+
+            <!-- Live Generated QR Code Card -->
+            <div id="adminQrSection"
+              style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(245, 158, 11, 0.3);">
+              <div style="display: flex; gap: 14px; align-items: center;">
+                <div
+                  style="background: #ffffff; padding: 6px; border-radius: 10px; border: 1.5px solid #0f172a; flex-shrink: 0;">
+                  <img id="adminQrImage" src="" alt="DIGIPIN QR Code"
+                    style="width: 90px; height: 90px; display: block;" />
+                </div>
+                <div style="flex: 1;">
+                  <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Verified Doorstep
+                    QR Code</div>
+                  <div style="font-size: 11px; color: #64748b; line-height: 15px; margin-bottom: 10px;">
+                    Scan with any phone camera to open this verified location and view the unique PIN.
+                  </div>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a id="adminLocationLink" href="#" target="_blank"
+                      style="background: #f59e0b; color: #0f172a; font-weight: 700; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                      🧭 Open Location
+                    </a>
+                    <a id="adminDownloadQrLink" href="#" download="OwnMyPin-QR.png"
+                      style="background: #0f172a; color: #ffffff; font-weight: 700; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 11px;">
+                      💾 Save QR
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Row -->
+          <div class="action-row" id="actionRow">
+            <button class="btn-approve" id="approveBtn" onclick="handleApprove()">
+              ✓ Approve and generate PIN
+            </button>
+            <button class="btn-outline" onclick="handleRequestChanges()">Request changes</button>
+            <button class="btn-outline btn-reject" onclick="handleReject()">Reject</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- VIEW 2: DAILY NEWS (DSC) -->
+    <div id="viewNews" class="view-container" style="display: none;">
+      <div class="form-card">
+        <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">➕ Publish Daily News (DSC)</h3>
+        <form onsubmit="handleCreateNews(event)">
+          <div class="form-grid">
+            <div class="form-group form-col-full">
+              <label>Headline</label>
+              <input id="newsHeadline" class="form-input"
+                placeholder="e.g. West Bengal DIGIPIN Emergency Service Rollout" required />
+            </div>
+            <div class="form-group form-col-full">
+              <label>Short Summary</label>
+              <input id="newsSummary" class="form-input" placeholder="One sentence summary for the DSC feed" required />
+            </div>
+            <div class="form-group form-col-full">
+              <label>Full Content / Story</label>
+              <textarea id="newsContent" class="form-textarea" placeholder="Detailed news story..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <input id="newsCategory" class="form-input" placeholder="Government / Local Business / Safety"
+                value="Daily News" />
+            </div>
+            <div class="form-group">
+              <label>Image URL</label>
+              <input id="newsImage" class="form-input" placeholder="https://images.unsplash.com/..."
+                value="https://images.unsplash.com/photo-1577495508048-b635879837f1?w=800&auto=format&fit=crop&q=60" />
+            </div>
+          </div>
+          <button type="submit" class="btn-approve" style="display: inline-flex; width: auto; padding: 12px 28px;">
+            📢 Post to Mobile App (DSC)
+          </button>
+        </form>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">📰 Active News Feed</h3>
+      <div id="newsCardsGrid" class="cards-grid">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- VIEW 3: ADS & NEARBY SHOPS -->
+    <div id="viewAds" class="view-container" style="display: none;">
+      <div class="form-card">
+        <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">➕ Create Ad or Nearby Shop Campaign</h3>
+        <form onsubmit="handleCreateAd(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Ad Title</label>
+              <input id="adTitle" class="form-input" placeholder="e.g. 20% Flat Off on Groceries" required />
+            </div>
+            <div class="form-group">
+              <label>Shop / Business Name</label>
+              <input id="adBizName" class="form-input" placeholder="e.g. Super Mart Rishra" required />
+            </div>
+            <div class="form-group form-col-full">
+              <label>Ad Description / Offer</label>
+              <textarea id="adDesc" class="form-textarea"
+                placeholder="Promotional details shown on Home Screen Today section and user Notifications..."
+                required></textarea>
+            </div>
+            <div class="form-group">
+              <label>Placement Type</label>
+              <select id="adType" class="form-select">
+                <option value="banner">Home Banner Ad (Featured)</option>
+                <option value="nearby_shop">Nearby Shop Promotion</option>
+                <option value="notification">Push Notification Alert</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Distance / Location Label</label>
+              <input id="adDistance" class="form-input" placeholder="e.g. 0.4 km" value="0.4 km" />
+            </div>
+            <div class="form-group">
+              <label>Shop Address</label>
+              <input id="adAddress" class="form-input" placeholder="e.g. 42 Rabindra Sarani, Rishra, Hooghly"
+                value="Rishra, Hooghly" />
+            </div>
+            <div class="form-group">
+              <label>Banner Image URL</label>
+              <input id="adImage" class="form-input" placeholder="https://..."
+                value="https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=60" />
+            </div>
+            <div class="form-group">
+              <label>Latitude</label>
+              <input id="adLat" class="form-input" value="22.7126" />
+            </div>
+            <div class="form-group">
+              <label>Longitude</label>
+              <input id="adLng" class="form-input" value="88.3524" />
+            </div>
+          </div>
+          <button type="submit" class="btn-approve" style="display: inline-flex; width: auto; padding: 12px 28px;">
+            🚀 Launch Ad & Send Notification
+          </button>
+        </form>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">📢 Active Ads & Shop Notifications</h3>
+      <div id="adsCardsGrid" class="cards-grid">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- VIEW 4: MONETIZATION & GOOGLE ADS -->
+    <div id="viewMonetization" class="view-container" style="display: none;">
+      <div class="form-card">
+        <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 8px;">⚙️ Ad Network & Monetization Control</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">
+          Choose whether the mobile app displays custom local shop ads posted by admin, or connects automatically to
+          Google Ads (AdMob / AdSense).
+        </p>
+
+        <form onsubmit="handleSaveSettings(event)">
+          <div class="switch-wrap">
+            <label class="switch">
+              <input type="checkbox" id="googleAdsToggle" onchange="updateAdModeLabel()">
+              <span class="slider"></span>
+            </label>
+            <div>
+              <strong id="adModeTitle" style="font-size: 15px;">Manual Ads Mode (Active)</strong>
+              <div id="adModeDesc" style="font-size: 12px; color: #64748b;">
+                Serving local businesses and campaigns created by admin in the Ads tab.
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 20px;">
+            <div class="form-group form-col-full">
+              <label>Google AdMob / AdSense Banner Unit ID</label>
+              <input id="googleAdUnitId" class="form-input" value="ca-app-pub-3940256099942544/6300978111" />
+              <span style="font-size: 11px; color: #94a3b8;">Default is Google official test unit ID for non-intrusive
+                mobile banners.</span>
+            </div>
+            <div class="form-group form-col-full">
+              <label>Global App Notice / Announcement</label>
+              <input id="appNotice" class="form-input"
+                value="Welcome to OwnMyPin! Get your verified digital address." />
+            </div>
+          </div>
+
+          <button type="submit" class="btn-approve"
+            style="display: inline-flex; width: auto; padding: 12px 28px; margin-top: 10px;">
+            💾 Save & Apply to Mobile App
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- VIEW 5: VERIFIED PINS DIRECTORY -->
+    <div id="viewVerified" class="view-container" style="display: none;">
+      <div class="list-card">
         <table class="list-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>City</th>
-              <th>Submitted</th>
+              <th>DIGIPIN Code</th>
+              <th>Owner Name</th>
+              <th>City & State</th>
+              <th>GPS Coordinates</th>
+              <th>QR Code</th>
+              <th>Action</th>
             </tr>
           </thead>
-          <tbody id="registrationsList">
+          <tbody id="verifiedPinsList">
             <tr>
-              <td colspan="3" style="text-align: center; color: #94a3b8; padding: 30px;">
-                Loading registrations...
+              <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">
+                Loading verified PINs...
               </td>
             </tr>
           </tbody>
         </table>
-      </section>
-
-      <!-- Right Detail Review Card -->
-      <section class="detail-card" id="detailCard">
-        <div class="applicant-top">
-          <div class="avatar-circle" id="applicantAvatar">👤</div>
-          <div class="applicant-meta">
-            <h3 id="applicantName">[Select an Applicant]</h3>
-            <div class="applicant-subinfo" id="applicantSubinfo">
-              DOB: --/--/---- • Age: -- • Guardian: --
-            </div>
-            <div class="property-tags" id="propertyTags">
-              <span class="prop-pill">[House]</span>
-              <span class="prop-pill">[Own]</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="address-box" id="addressBox">
-          Select an application from the left list to review details and approve a DIGIPIN.
-        </div>
-
-        <div class="photos-title">Selfie & Property Photos</div>
-        <div class="photos-grid" id="photosGrid">
-          <div class="photo-thumb">Selfie</div>
-          <div class="photo-thumb">Photo 1</div>
-          <div class="photo-thumb">Photo 2</div>
-          <div class="photo-thumb">Photo 3</div>
-          <div class="photo-thumb">Photo 4</div>
-        </div>
-
-        <div class="checklist-container">
-          <div class="check-item">
-            <span class="check-icon">✓</span> Selfie taken in the app
-          </div>
-          <div class="check-item">
-            <span class="check-icon">✓</span> Location verified on Google Map
-          </div>
-          <div class="check-item">
-            <span class="check-icon">✓</span> Age 16 or above
-          </div>
-          <div class="check-item">
-            <span class="check-icon">✓</span> Name matches government ID
-          </div>
-        </div>
-
-        <!-- DIGIPIN Box -->
-        <div class="pin-preview-card">
-          <div class="pin-label" id="pinBoxLabel">PIN generated on approval (SS-DD-NNNNNNNN)</div>
-          <div class="pin-display" id="pinDisplay">WB-09-45896524</div>
-          <div class="pin-note">Patterned numbers like 11111111 or 12345678 are never issued.</div>
-        </div>
-
-        <!-- Action Row -->
-        <div class="action-row" id="actionRow">
-          <button class="btn-approve" id="approveBtn" onclick="handleApprove()">
-            ✓ Approve and generate PIN
-          </button>
-          <button class="btn-outline" onclick="handleRequestChanges()">Request changes</button>
-          <button class="btn-outline btn-reject" onclick="handleReject()">Reject</button>
-        </div>
-      </section>
+      </div>
     </div>
   </main>
 
   <div id="toast" class="toast"></div>
 
+  <!-- Photo Modal -->
+  <div id="photoModal" class="photo-modal-backdrop" onclick="if(event.target===this)closePhotoModal()">
+    <div class="photo-modal-content">
+      <div class="photo-modal-header">
+        <span id="photoModalTitle">Photo Preview</span>
+        <button onclick="closePhotoModal()"
+          style="border:none;background:transparent;cursor:pointer;font-size:18px;">✕</button>
+      </div>
+      <div class="photo-modal-body">
+        <img id="photoModalImg" src="" alt="Full Preview" class="photo-modal-img" />
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Modal -->
+  <div id="qrModal" class="photo-modal-backdrop" onclick="if(event.target===this)closeQrModal()">
+    <div class="photo-modal-content" style="max-width: 420px; text-align: center; padding: 24px;">
+      <div class="photo-modal-header" style="justify-content: space-between; margin-bottom: 16px;">
+        <span id="qrModalTitle" style="font-weight: 800; font-size: 16px; color: #0f172a;">Doorstep QR Code</span>
+        <button onclick="closeQrModal()"
+          style="border:none;background:transparent;cursor:pointer;font-size:18px;">✕</button>
+      </div>
+      <div
+        style="background: #fef3c7; padding: 8px 14px; border-radius: 12px; font-family: monospace; font-size: 18px; font-weight: 800; color: #b45309; margin-bottom: 16px;"
+        id="qrModalPin">
+        WB-09-45896524
+      </div>
+      <div
+        style="display: inline-block; background: #fff; padding: 12px; border-radius: 16px; border: 2px solid #0f172a; margin-bottom: 16px;">
+        <img id="qrModalImg" src="" alt="QR" style="width: 200px; height: 200px; display: block;" />
+      </div>
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">
+        When scanned with any phone camera, opens the verified doorstep location and displays the unique PIN.
+      </p>
+      <div style="display: flex; gap: 10px;">
+        <a id="qrModalOpenLocation" href="#" target="_blank"
+          style="flex: 1; background: #f59e0b; color: #0f172a; font-weight: 700; padding: 10px; border-radius: 10px; text-decoration: none;">
+          🧭 Open Location
+        </a>
+        <a id="qrModalDownload" href="#" download
+          style="flex: 1; background: #0f172a; color: #fff; font-weight: 700; padding: 10px; border-radius: 10px; text-decoration: none;">
+          💾 Save QR
+        </a>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-      ? `${window.location.origin}/api`
-      : 'http://localhost:5000/api';
+    const API_SERVER_ORIGIN = (window.location.origin.includes('localhost:5000') || window.location.origin.includes('127.0.0.1:5000'))
+      ? window.location.origin
+      : 'http://localhost:5000';
+    const API_BASE = `${API_SERVER_ORIGIN}/api`;
 
     let allRegistrations = [];
     let selectedReg = null;
+
+    function switchAdminTab(tab, el) {
+      document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+      if (el) el.classList.add('active');
+
+      const views = ['viewRegistrations', 'viewNews', 'viewAds', 'viewMonetization', 'viewVerified'];
+      views.forEach(v => {
+        const elem = document.getElementById(v);
+        if (elem) elem.style.display = 'none';
+      });
+
+      const titleEl = document.getElementById('pageTitle');
+
+      if (tab === 'registrations') {
+        document.getElementById('viewRegistrations').style.display = 'block';
+        titleEl.textContent = 'New registrations';
+        loadRegistrations();
+      } else if (tab === 'news') {
+        document.getElementById('viewNews').style.display = 'block';
+        titleEl.textContent = 'Daily News (DSC Screen)';
+        loadNews();
+      } else if (tab === 'ads') {
+        document.getElementById('viewAds').style.display = 'block';
+        titleEl.textContent = 'Ads & Nearby Shops';
+        loadAds();
+      } else if (tab === 'monetization') {
+        document.getElementById('viewMonetization').style.display = 'block';
+        titleEl.textContent = 'Google Ads & Monetization';
+        loadSettings();
+      } else if (tab === 'verified') {
+        document.getElementById('viewVerified').style.display = 'block';
+        titleEl.textContent = 'Verified OwnMyPins Directory';
+        loadVerifiedPins();
+      }
+    }
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
@@ -604,6 +1175,34 @@
       setTimeout(() => toast.classList.remove('show'), 3500);
     }
 
+    function resolvePhotoUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      if (rawUrl.startsWith('data:image/')) return rawUrl;
+      const idx = rawUrl.indexOf('/uploads/');
+      if (idx !== -1) {
+        return `${API_SERVER_ORIGIN}${rawUrl.substring(idx)}`;
+      }
+      if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+        return rawUrl;
+      }
+      return `${API_SERVER_ORIGIN}/${rawUrl.replace(/^\/+/, '')}`;
+    }
+
+    function openPhotoModal(src, title) {
+      const modal = document.getElementById('photoModal');
+      const img = document.getElementById('photoModalImg');
+      document.getElementById('photoModalTitle').textContent = title || 'Photo Preview';
+      img.src = src;
+      modal.classList.add('open');
+    }
+
+    function closePhotoModal() {
+      document.getElementById('photoModal').classList.remove('open');
+    }
+
+    // ==========================================
+    // 1. REGISTRATIONS REVIEW
+    // ==========================================
     async function loadRegistrations() {
       try {
         const res = await fetch(`${API_BASE}/admin/registrations`);
@@ -620,7 +1219,6 @@
           }
         }
       } catch (err) {
-        console.error('Failed to load registrations:', err);
         showToast('Error connecting to backend server');
       }
     }
@@ -638,51 +1236,35 @@
         return `
           <tr class="${isSelected ? 'selected' : ''}" onclick="selectRegistration(${reg.id})">
             <td>
-              <div style="font-weight: 700;">[${reg.full_name}]</div>
+              <div style="font-weight: 700;">${reg.full_name}</div>
               <span class="status-badge status-${reg.status}">${reg.status}</span>
             </td>
-            <td>[${reg.city}]</td>
-            <td style="color: #64748b; font-size: 12px;">[${timeFormatted}]</td>
+            <td>${reg.city}</td>
+            <td style="color: #64748b; font-size: 12px;">${timeFormatted}</td>
           </tr>
         `;
       }).join('');
     }
 
-    function calculateAge(dobStr) {
-      if (!dobStr) return '24';
-      const parts = dobStr.split(/[\/\-\.]/);
-      if (parts.length === 3) {
-        const year = parseInt(parts[2], 10);
-        if (!isNaN(year)) {
-          return new Date().getFullYear() - year;
-        }
-      }
-      return '22';
-    }
-
     function selectRegistration(id) {
       selectedReg = allRegistrations.find(r => r.id === id);
       renderList();
-
       if (!selectedReg) return;
 
-      const age = calculateAge(selectedReg.dob);
-      const guardianText = selectedReg.guardian_name ? selectedReg.guardian_name : (age >= 18 ? '[not needed]' : '[Required]');
-
       document.getElementById('applicantAvatar').textContent = selectedReg.full_name.charAt(0).toUpperCase();
-      document.getElementById('applicantName').textContent = `[${selectedReg.full_name}]`;
+      document.getElementById('applicantName').textContent = selectedReg.full_name;
       document.getElementById('applicantSubinfo').textContent =
-        `DOB: [${selectedReg.dob}] • Age: [${age}] • Guardian: ${guardianText} • [${selectedReg.property_type}] - [${selectedReg.ownership_type}]`;
+        `DOB: ${selectedReg.dob} • ${selectedReg.property_type} - ${selectedReg.ownership_type}`;
 
       document.getElementById('propertyTags').innerHTML = `
-        <span class="prop-pill">[${selectedReg.property_type}]</span>
-        <span class="prop-pill">[${selectedReg.ownership_type}]</span>
+        <span class="prop-pill">${selectedReg.property_type}</span>
+        <span class="prop-pill">${selectedReg.ownership_type}</span>
         <span class="prop-pill">Phone: ${selectedReg.phone}</span>
       `;
 
       document.getElementById('addressBox').innerHTML = `
-        <strong>Address:</strong> [${selectedReg.address_line}, ${selectedReg.city}, ${selectedReg.district}, ${selectedReg.state} ${selectedReg.pincode}].<br>
-        <strong>Landmark:</strong> [${selectedReg.landmark || 'None specified'}]<br>
+        <strong>Address:</strong> ${selectedReg.address_line}, ${selectedReg.city}, ${selectedReg.district}, ${selectedReg.state} ${selectedReg.pincode}.<br>
+        <strong>Landmark:</strong> ${selectedReg.landmark || 'None specified'}<br>
         <strong>Coordinates:</strong> Lat: ${selectedReg.latitude || '22.7126'}, Lng: ${selectedReg.longitude || '88.3524'}
       `;
 
@@ -690,25 +1272,39 @@
       const photosContainer = document.getElementById('photosGrid');
       let photosHtml = '';
       if (selectedReg.selfie_url) {
-        photosHtml += `<div class="photo-thumb" title="Applicant Selfie"><img src="${selectedReg.selfie_url}" alt="Selfie" /></div>`;
+        const selfieSrc = resolvePhotoUrl(selectedReg.selfie_url);
+        photosHtml += `
+          <div class="photo-thumb" onclick="openPhotoModal('${selfieSrc}', 'Selfie')">
+            <img src="${selfieSrc}" alt="Selfie" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400';" />
+            <div class="photo-badge">🤳 Selfie</div>
+          </div>`;
       } else {
-        photosHtml += `<div class="photo-thumb">🤳 Selfie</div>`;
+        photosHtml += `<div class="photo-thumb"><div class="photo-placeholder"><span>🤳</span>No selfie</div></div>`;
       }
 
       const propPhotos = Array.isArray(selectedReg.property_photos) ? selectedReg.property_photos : [];
       propPhotos.forEach((photoUrl, idx) => {
-        photosHtml += `<div class="photo-thumb" title="Property Photo ${idx + 1}"><img src="${photoUrl}" alt="Property ${idx + 1}" /></div>`;
+        const photoSrc = resolvePhotoUrl(photoUrl);
+        photosHtml += `
+          <div class="photo-thumb" onclick="openPhotoModal('${photoSrc}', 'Property ${idx + 1}')">
+            <img src="${photoSrc}" alt="Property" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400';" />
+            <div class="photo-badge">🏠 Photo ${idx + 1}</div>
+          </div>`;
       });
-
-      for (let i = propPhotos.length + 1; i <= 4; i++) {
-        photosHtml += `<div class="photo-thumb">📷 Photo ${i}</div>`;
-      }
       photosContainer.innerHTML = photosHtml;
 
-      // PIN Preview
+      // PIN Preview & QR Generation
       const pinLabel = document.getElementById('pinBoxLabel');
       const pinDisplay = document.getElementById('pinDisplay');
       const approveBtn = document.getElementById('approveBtn');
+      const adminQrSection = document.getElementById('adminQrSection');
+      const adminQrImage = document.getElementById('adminQrImage');
+      const adminLocationLink = document.getElementById('adminLocationLink');
+      const adminDownloadQrLink = document.getElementById('adminDownloadQrLink');
+
+      const origin = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+        ? window.location.origin
+        : 'http://localhost:5000';
 
       if (selectedReg.status === 'approved' && selectedReg.pin_code) {
         pinLabel.textContent = 'VERIFIED OWNMIPIN (APPROVED)';
@@ -716,27 +1312,32 @@
         pinDisplay.style.color = '#10b981';
         approveBtn.textContent = '✓ Already Approved';
         approveBtn.disabled = true;
-        approveBtn.style.opacity = '0.6';
+
+        // Display QR Code
+        adminQrSection.style.display = 'block';
+        const qrUrl = `${API_BASE}/pins/qr/${encodeURIComponent(selectedReg.pin_code)}?format=png`;
+        adminQrImage.src = qrUrl;
+        const locationUrl = `${origin}/location?pin=${encodeURIComponent(selectedReg.pin_code)}`;
+        adminLocationLink.href = locationUrl;
+        adminDownloadQrLink.href = qrUrl;
+        adminDownloadQrLink.download = `OwnMyPin-${selectedReg.pin_code}-QR.png`;
       } else {
         pinLabel.textContent = 'PIN generated on approval (SS-DD-NNNNNNNN)';
-        const previewPin = `${selectedReg.state_code || 'WB'}-${selectedReg.district_code || '09'}-45896524`;
-        pinDisplay.textContent = previewPin;
-        pinDisplay.style.color = '#152238';
+        pinDisplay.textContent = `${selectedReg.state_code || 'WB'}-${selectedReg.district_code || '09'}-45896524`;
+        pinDisplay.style.color = '#f59e0b';
         approveBtn.textContent = '✓ Approve and generate PIN';
         approveBtn.disabled = false;
-        approveBtn.style.opacity = '1';
+        adminQrSection.style.display = 'none';
       }
     }
 
     async function handleApprove() {
       if (!selectedReg) return;
       try {
-        const res = await fetch(`${API_BASE}/admin/registrations/${selectedReg.id}/approve`, {
-          method: 'POST',
-        });
+        const res = await fetch(`${API_BASE}/admin/registrations/${selectedReg.id}/approve`, { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-          showToast(`PIN ${data.pinCode} generated & approved!`);
+          showToast(`PIN ${data.pinCode} generated & QR Code created!`);
           await loadRegistrations();
         } else {
           showToast(data.message || 'Approval failed');
@@ -750,7 +1351,6 @@
       if (!selectedReg) return;
       const reason = prompt('Please enter rejection reason:', 'Details could not be verified with government records');
       if (!reason) return;
-
       try {
         const res = await fetch(`${API_BASE}/admin/registrations/${selectedReg.id}/reject`, {
           method: 'POST',
@@ -759,11 +1359,11 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast('Registration marked as rejected');
+          showToast('Registration rejected');
           await loadRegistrations();
         }
       } catch (err) {
-        showToast('Error rejecting registration');
+        showToast('Error rejecting');
       }
     }
 
@@ -771,7 +1371,6 @@
       if (!selectedReg) return;
       const note = prompt('What changes are requested from applicant?', 'Please re-upload a clearer selfie and confirm landmark.');
       if (!note) return;
-
       try {
         const res = await fetch(`${API_BASE}/admin/registrations/${selectedReg.id}/request-changes`, {
           method: 'POST',
@@ -780,7 +1379,7 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast('Changes requested from applicant');
+          showToast('Changes requested');
           await loadRegistrations();
         }
       } catch (err) {
@@ -788,8 +1387,303 @@
       }
     }
 
-    // Initialize
+    // ==========================================
+    // 2. DAILY NEWS (DSC)
+    // ==========================================
+    async function loadNews() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/news`);
+        const data = await res.json();
+        const grid = document.getElementById('newsCardsGrid');
+        if (data.success && data.news.length > 0) {
+          grid.innerHTML = data.news.map((item) => `
+            <div class="item-card">
+              <img src="${item.image_url || 'https://images.unsplash.com/photo-1577495508048-b635879837f1?w=800&auto=format&fit=crop&q=60'}" class="item-card-img" />
+              <div class="item-card-body">
+                <div class="item-card-meta">
+                  <span class="item-badge">${item.category || 'News'}</span>
+                  <span style="font-size: 11px; color: #94a3b8;">${item.time_ago || 'Recent'}</span>
+                </div>
+                <h4 class="item-card-title">${item.headline}</h4>
+                <p class="item-card-desc">${item.summary}</p>
+                <div class="item-card-footer">
+                  <span style="font-size: 11px; color: #64748b;">Source: ${item.source || 'Admin'}</span>
+                  <button class="btn-delete" onclick="handleDeleteNews(${item.id})">🗑️ Delete</button>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          grid.innerHTML = '<p style="color: #94a3b8; padding: 20px;">No daily news published yet.</p>';
+        }
+      } catch (e) {
+        showToast('Failed to load news');
+      }
+    }
+
+    async function handleCreateNews(e) {
+      e.preventDefault();
+      const headline = document.getElementById('newsHeadline').value;
+      const summary = document.getElementById('newsSummary').value;
+      const content = document.getElementById('newsContent').value;
+      const category = document.getElementById('newsCategory').value;
+      const image_url = document.getElementById('newsImage').value;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/news`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ headline, summary, content, category, image_url }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('News published to mobile app (DSC)!');
+          document.getElementById('newsHeadline').value = '';
+          document.getElementById('newsSummary').value = '';
+          document.getElementById('newsContent').value = '';
+          loadNews();
+        }
+      } catch (e) {
+        showToast('Error posting news');
+      }
+    }
+
+    async function handleDeleteNews(id) {
+      if (!confirm('Are you sure you want to delete this news item?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin/news/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('News item deleted');
+          loadNews();
+        }
+      } catch (e) {
+        showToast('Error deleting news');
+      }
+    }
+
+    // ==========================================
+    // 3. ADS & NEARBY SHOPS
+    // ==========================================
+    async function loadAds() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/ads`);
+        const data = await res.json();
+        const grid = document.getElementById('adsCardsGrid');
+        if (data.success && data.ads.length > 0) {
+          grid.innerHTML = data.ads.map((ad) => `
+            <div class="item-card">
+              <img src="${ad.image_url || 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=60'}" class="item-card-img" />
+              <div class="item-card-body">
+                <div class="item-card-meta">
+                  <span class="item-badge">${ad.type === 'banner' ? 'Banner Ad' : ad.type === 'nearby_shop' ? 'Shop Ad' : 'Notification Alert'}</span>
+                  <span style="font-size: 11px; color: #10b981; font-weight:700;">● Active</span>
+                </div>
+                <h4 class="item-card-title">${ad.title}</h4>
+                <p class="item-card-desc">${ad.description}</p>
+                <div style="font-size: 12px; color: #334155; margin-bottom: 10px;">
+                  🏪 <strong>${ad.business_name || 'Nearby Shop'}</strong> · ${ad.distance || '0.5 km'}<br>
+                  📍 ${ad.address || 'Local area'} (${ad.latitude}, ${ad.longitude})
+                </div>
+                <div class="item-card-footer">
+                  <span style="font-size: 11px; color: #64748b;">Pushed to Notifications</span>
+                  <button class="btn-delete" onclick="handleDeleteAd(${ad.id})">🗑️ Delete Ad</button>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          grid.innerHTML = '<p style="color: #94a3b8; padding: 20px;">No ads running currently.</p>';
+        }
+      } catch (e) {
+        showToast('Failed to load ads');
+      }
+    }
+
+    async function handleCreateAd(e) {
+      e.preventDefault();
+      const title = document.getElementById('adTitle').value;
+      const business_name = document.getElementById('adBizName').value;
+      const description = document.getElementById('adDesc').value;
+      const type = document.getElementById('adType').value;
+      const distance = document.getElementById('adDistance').value;
+      const address = document.getElementById('adAddress').value;
+      const image_url = document.getElementById('adImage').value;
+      const latitude = parseFloat(document.getElementById('adLat').value) || 22.7126;
+      const longitude = parseFloat(document.getElementById('adLng').value) || 88.3524;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/ads`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            business_name,
+            description,
+            type,
+            distance,
+            address,
+            image_url,
+            latitude,
+            longitude,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Ad launched and sent to user notifications!');
+          document.getElementById('adTitle').value = '';
+          document.getElementById('adDesc').value = '';
+          loadAds();
+        }
+      } catch (e) {
+        showToast('Error creating ad');
+      }
+    }
+
+    async function handleDeleteAd(id) {
+      if (!confirm('Are you sure you want to delete this ad?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin/ads/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Ad deleted');
+          loadAds();
+        }
+      } catch (e) {
+        showToast('Error deleting ad');
+      }
+    }
+
+    // ==========================================
+    // 4. MONETIZATION & GOOGLE ADS SETTINGS
+    // ==========================================
+    async function loadSettings() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/settings`);
+        const data = await res.json();
+        if (data.success && data.settings) {
+          const isGoogle = data.settings.ad_mode === 'google_ads' || data.settings.google_ads_enabled === 'true';
+          document.getElementById('googleAdsToggle').checked = isGoogle;
+          if (data.settings.google_ad_unit_id) {
+            document.getElementById('googleAdUnitId').value = data.settings.google_ad_unit_id;
+          }
+          if (data.settings.app_notice) {
+            document.getElementById('appNotice').value = data.settings.app_notice;
+          }
+          updateAdModeLabel();
+        }
+      } catch (e) {
+        showToast('Failed to load settings');
+      }
+    }
+
+    function updateAdModeLabel() {
+      const isChecked = document.getElementById('googleAdsToggle').checked;
+      const title = document.getElementById('adModeTitle');
+      const desc = document.getElementById('adModeDesc');
+      if (isChecked) {
+        title.textContent = 'Google Ads Mode (Active)';
+        title.style.color = '#0284c7';
+        desc.textContent = 'Mobile app is serving Google AdMob / AdSense banners on Home Screen.';
+      } else {
+        title.textContent = 'Manual Ads Mode (Active)';
+        title.style.color = '#0f172a';
+        desc.textContent = 'Serving local shop ads and featured campaigns created in the admin Ads tab.';
+      }
+    }
+
+    async function handleSaveSettings(e) {
+      e.preventDefault();
+      const isGoogle = document.getElementById('googleAdsToggle').checked;
+      const google_ad_unit_id = document.getElementById('googleAdUnitId').value;
+      const app_notice = document.getElementById('appNotice').value;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ad_mode: isGoogle ? 'google_ads' : 'manual',
+            google_ads_enabled: isGoogle,
+            google_ad_unit_id,
+            app_notice,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Settings saved & applied live to mobile app!');
+        }
+      } catch (e) {
+        showToast('Error saving settings');
+      }
+    }
+
+    // ==========================================
+    // 5. VERIFIED PINS DIRECTORY
+    // ==========================================
+    function openQrModal(pinCode, fullName, lat, lng) {
+      const modal = document.getElementById('qrModal');
+      const origin = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+        ? window.location.origin
+        : 'http://localhost:5000';
+      const qrUrl = `${API_BASE}/pins/qr/${encodeURIComponent(pinCode)}?format=png`;
+      const locationUrl = `${origin}/location?pin=${encodeURIComponent(pinCode)}`;
+
+      document.getElementById('qrModalTitle').textContent = `QR Code: ${fullName}`;
+      document.getElementById('qrModalPin').textContent = pinCode;
+      document.getElementById('qrModalImg').src = qrUrl;
+      document.getElementById('qrModalOpenLocation').href = locationUrl;
+      document.getElementById('qrModalDownload').href = qrUrl;
+      document.getElementById('qrModalDownload').download = `OwnMyPin-${pinCode}-QR.png`;
+      modal.classList.add('open');
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.remove('open');
+    }
+
+    async function loadVerifiedPins() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/pins`);
+        const data = await res.json();
+        const tbody = document.getElementById('verifiedPinsList');
+        if (data.success && data.pins.length > 0) {
+          tbody.innerHTML = data.pins.map(pin => {
+            const qrUrl = `${API_BASE}/pins/qr/${encodeURIComponent(pin.pin_code)}?format=png`;
+            const origin = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+              ? window.location.origin
+              : 'http://localhost:5000';
+            const locationUrl = `${origin}/location?pin=${encodeURIComponent(pin.pin_code)}`;
+            return `
+              <tr>
+                <td><strong style="color: #1d4ed8; font-family: monospace;">${pin.pin_code}</strong></td>
+                <td>${pin.full_name}</td>
+                <td>${pin.city}, ${pin.state}</td>
+                <td style="font-family: monospace; font-size: 12px; color: #0284c7;">${pin.latitude}, ${pin.longitude}</td>
+                <td>
+                  <button onclick="openQrModal('${pin.pin_code}', '${(pin.full_name || '').replace(/'/g, "\\'")}', '${pin.latitude}', '${pin.longitude}')" style="background: #112240; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                    📷 View QR
+                  </button>
+                </td>
+                <td>
+                  <a href="${locationUrl}" target="_blank" style="color: #f59e0b; font-weight:700; text-decoration: none; margin-right: 8px;">
+                    🧭 Doorstep Location
+                  </a>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">No verified pins yet.</td></tr>';
+        }
+      } catch (e) {
+        showToast('Failed to load pins directory');
+      }
+    }
+
+    // Initial boot
     loadRegistrations();
   </script>
 </body>
+
 </html>

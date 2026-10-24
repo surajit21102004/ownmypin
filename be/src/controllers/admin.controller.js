@@ -31,6 +31,15 @@ async function getRegistrations(req, res, next) {
     );
     const [rejectedCnt] = await pool.query("SELECT COUNT(*) as cnt FROM registrations WHERE status = 'rejected'");
 
+function normalizeUrl(url) {
+  if (!url || typeof url !== 'string') return url;
+  const idx = url.indexOf('/uploads/');
+  if (idx !== -1) {
+    return url.substring(idx);
+  }
+  return url;
+}
+
     const parsedRows = rows.map((r) => {
       if (typeof r.property_photos === 'string') {
         try {
@@ -38,6 +47,12 @@ async function getRegistrations(req, res, next) {
         } catch (e) {
           r.property_photos = [];
         }
+      }
+      if (Array.isArray(r.property_photos)) {
+        r.property_photos = r.property_photos.map(normalizeUrl);
+      }
+      if (r.selfie_url) {
+        r.selfie_url = normalizeUrl(r.selfie_url);
       }
       return r;
     });
@@ -82,6 +97,12 @@ async function getRegistrationById(req, res, next) {
       } catch (e) {
         reg.property_photos = [];
       }
+    }
+    if (Array.isArray(reg.property_photos)) {
+      reg.property_photos = reg.property_photos.map(normalizeUrl);
+    }
+    if (reg.selfie_url) {
+      reg.selfie_url = normalizeUrl(reg.selfie_url);
     }
 
     return res.status(200).json({ success: true, registration: reg });
@@ -185,10 +206,231 @@ async function requestChanges(req, res, next) {
   }
 }
 
+/**
+ * Admin: Create news
+ */
+async function createNews(req, res, next) {
+  try {
+    const { headline, summary, content, category, image_url, source } = req.body;
+    if (!headline || !summary) {
+      return res.status(400).json({ success: false, message: 'Headline and summary are required' });
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO news (headline, summary, content, category, image_url, source, time_ago) 
+       VALUES (?, ?, ?, ?, ?, ?, 'Just now')`,
+      [
+        headline.trim(),
+        summary.trim(),
+        content ? content.trim() : null,
+        category || 'Daily News',
+        image_url || 'https://images.unsplash.com/photo-1577495508048-b635879837f1?w=800&auto=format&fit=crop&q=60',
+        source || 'OwnMyPin Admin',
+      ]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'News posted successfully',
+      id: result.insertId,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Delete news
+ */
+async function deleteNews(req, res, next) {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM news WHERE id = ?', [id]);
+    return res.status(200).json({ success: true, message: 'News deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Create ad / notification
+ */
+async function createAd(req, res, next) {
+  try {
+    const {
+      title,
+      description,
+      category,
+      type,
+      image_url,
+      link_url,
+      business_name,
+      distance,
+      address,
+      latitude,
+      longitude,
+    } = req.body;
+
+    if (!title || !description) {
+      return res.status(400).json({ success: false, message: 'Title and description are required' });
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO ads (title, description, category, type, image_url, link_url, business_name, distance, address, latitude, longitude)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        title.trim(),
+        description.trim(),
+        category || 'Sponsored',
+        type || 'banner', // 'banner' | 'nearby_shop' | 'notification'
+        image_url || null,
+        link_url || null,
+        business_name || null,
+        distance || '0.5 km',
+        address || null,
+        latitude || 22.71260000,
+        longitude || 88.35240000,
+      ]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Ad / Notification created successfully',
+      id: result.insertId,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Delete ad
+ */
+async function deleteAd(req, res, next) {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM ads WHERE id = ?', [id]);
+    return res.status(200).json({ success: true, message: 'Ad deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Get app monetization settings
+ */
+async function getSettings(req, res, next) {
+  try {
+    const [rows] = await pool.query('SELECT setting_key, setting_value FROM app_settings');
+    const settings = {};
+    rows.forEach((r) => {
+      settings[r.setting_key] = r.setting_value;
+    });
+
+    return res.status(200).json({
+      success: true,
+      settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Update app monetization settings (toggle Manual vs Google Ads)
+ */
+async function updateSettings(req, res, next) {
+  try {
+    const { ad_mode, google_ads_enabled, google_ad_unit_id, google_banner_html, app_notice } = req.body;
+
+    const updates = [
+      { key: 'ad_mode', val: ad_mode },
+      { key: 'google_ads_enabled', val: String(google_ads_enabled) },
+      { key: 'google_ad_unit_id', val: google_ad_unit_id },
+      { key: 'google_banner_html', val: google_banner_html },
+      { key: 'app_notice', val: app_notice },
+    ];
+
+    for (const item of updates) {
+      if (item.val !== undefined && item.val !== null) {
+        await pool.query(
+          `INSERT INTO app_settings (setting_key, setting_value) 
+           VALUES (?, ?) 
+           ON DUPLICATE KEY UPDATE setting_value = ?`,
+          [item.key, item.val, item.val]
+        );
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Settings updated successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Create Nearby Business
+ */
+async function createNearbyBusiness(req, res, next) {
+  try {
+    const { name, category, distance, address, rating, pin_code, latitude, longitude } = req.body;
+    if (!name || !address) {
+      return res.status(400).json({ success: false, message: 'Business name and address required' });
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO nearby_businesses (name, category, distance, address, rating, pin_code, latitude, longitude)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        name.trim(),
+        category || 'Store',
+        distance || '0.5 km',
+        address.trim(),
+        rating || 4.8,
+        pin_code || null,
+        latitude || 22.7126,
+        longitude || 88.3524,
+      ]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Nearby business added successfully',
+      id: result.insertId,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Delete Nearby Business
+ */
+async function deleteNearbyBusiness(req, res, next) {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM nearby_businesses WHERE id = ?', [id]);
+    return res.status(200).json({ success: true, message: 'Business removed successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getRegistrations,
   getRegistrationById,
   approveRegistration,
   rejectRegistration,
   requestChanges,
+  createNews,
+  deleteNews,
+  createAd,
+  deleteAd,
+  getSettings,
+  updateSettings,
+  createNearbyBusiness,
+  deleteNearbyBusiness,
 };

@@ -13,14 +13,137 @@ import {
   Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import { WebView } from 'react-native-webview';
 import { submitRegistration, getMyRegistration, uploadImageToServer } from '../services/api';
 
 const { width } = Dimensions.get('window');
+
+const getLeafletHtml = (lat, lng) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #f8fafc;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    .leaflet-control-attribution {
+      font-size: 9px !important;
+      background: rgba(255,255,255,0.75) !important;
+    }
+    .custom-pulse-pin {
+      background: #152238;
+      border: 3px solid #F59E0B;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+      position: relative;
+    }
+    .custom-pulse-pin::after {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      right: -6px;
+      bottom: -6px;
+      border-radius: 50%;
+      border: 2px solid #F59E0B;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .map-hint {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      z-index: 1000;
+      background: rgba(21, 34, 56, 0.9);
+      color: #ffffff;
+      padding: 5px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="map-hint">📍 Drag pin or tap map to calibrate</div>
+  <script>
+    var lat = ${lat || 22.7126};
+    var lng = ${lng || 88.3524};
+    var map = L.map('map', {
+      zoomControl: true,
+      attributionControl: true
+    }).setView([lat, lng], 16);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    var pinIcon = L.divIcon({
+      className: 'custom-pulse-pin',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+
+    var marker = L.marker([lat, lng], {
+      icon: pinIcon,
+      draggable: true
+    }).addTo(map);
+
+    marker.bindPopup('<b>Doorstep Location</b><br>Lat: ' + lat.toFixed(5) + '<br>Lng: ' + lng.toFixed(5)).openPopup();
+
+    function notifyNative(newLat, newLng) {
+      marker.setLatLng([newLat, newLng]);
+      marker.setPopupContent('<b>Doorstep Location</b><br>Lat: ' + newLat.toFixed(5) + '<br>Lng: ' + newLng.toFixed(5));
+      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          latitude: parseFloat(newLat.toFixed(6)),
+          longitude: parseFloat(newLng.toFixed(6))
+        }));
+      }
+    }
+
+    marker.on('dragend', function(e) {
+      var coord = e.target.getLatLng();
+      notifyNative(coord.lat, coord.lng);
+    });
+
+    map.on('click', function(e) {
+      notifyNative(e.latlng.lat, e.latlng.lng);
+    });
+  </script>
+</body>
+</html>
+`;
 
 export default function RegisterFlow({
   phone,
   initialRegistration,
   onBackToHome,
+  onRegistrationSubmitted,
 }) {
   // Current screen mode: 'flow' (steps 1-5), 'submitted' (tracker), 'ready' (approved PIN)
   const [screenMode, setScreenMode] = useState(() => {
@@ -35,28 +158,29 @@ export default function RegisterFlow({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingSelfie, setIsUploadingSelfie] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [registration, setRegistration] = useState(initialRegistration);
 
   // Form State
   const [formData, setFormData] = useState({
-    fullName: 'Rahul Sharma',
-    dob: '15/08/2000',
-    guardianName: '',
-    propertyType: 'House',
-    ownershipType: 'Own',
-    addressLine: '42 Rabindra Sarani, Morepukur',
-    state: 'West Bengal',
-    stateCode: 'WB',
-    district: 'Hooghly',
-    districtCode: '09',
-    city: 'Rishra',
-    pincode: '712248',
-    landmark: 'Near Hanuman Mandir',
-    latitude: 22.7126,
-    longitude: 88.3524,
-    selfieUrl: null,
-    propertyPhotos: [],
-    agreedToPolicy: true,
+    fullName: initialRegistration?.full_name || '',
+    dob: initialRegistration?.dob || '',
+    guardianName: initialRegistration?.guardian_name || '',
+    propertyType: initialRegistration?.property_type || 'House',
+    ownershipType: initialRegistration?.ownership_type || 'Own',
+    addressLine: initialRegistration?.address_line || '',
+    state: initialRegistration?.state || 'West Bengal',
+    stateCode: initialRegistration?.state_code || 'WB',
+    district: initialRegistration?.district || 'Hooghly',
+    districtCode: initialRegistration?.district_code || '09',
+    city: initialRegistration?.city || '',
+    pincode: initialRegistration?.pincode || '',
+    landmark: initialRegistration?.landmark || '',
+    latitude: initialRegistration?.latitude || 22.7126,
+    longitude: initialRegistration?.longitude || 88.3524,
+    selfieUrl: initialRegistration?.selfie_url || null,
+    propertyPhotos: initialRegistration?.property_photos || [],
+    agreedToPolicy: false,
   });
 
   const propertyTypes = ['House', 'Flat', 'Shop', 'Other'];
@@ -112,6 +236,62 @@ export default function RegisterFlow({
       setCurrentStep(currentStep - 1);
     } else {
       onBackToHome();
+    }
+  };
+
+  // Auto-Detect Current GPS Location & Geocode
+  const handleDetectLocation = async () => {
+    try {
+      setIsLocating(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setIsLocating(false);
+        Alert.alert('Permission Denied', 'Location permission is required to detect your doorstep GPS.');
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Highest,
+      });
+
+      const newLat = parseFloat(loc.coords.latitude.toFixed(6));
+      const newLng = parseFloat(loc.coords.longitude.toFixed(6));
+
+      try {
+        const reverse = await Location.reverseGeocodeAsync({
+          latitude: newLat,
+          longitude: newLng,
+        });
+        if (reverse && reverse.length > 0) {
+          const place = reverse[0];
+          setFormData((prev) => ({
+            ...prev,
+            latitude: newLat,
+            longitude: newLng,
+            city: prev.city || place.city || place.subregion || '',
+            district: prev.district || place.district || place.subregion || 'Hooghly',
+            state: prev.state || place.region || 'West Bengal',
+            pincode: prev.pincode || place.postalCode || '',
+            addressLine: prev.addressLine || [place.name, place.street].filter(Boolean).join(', ') || prev.addressLine,
+          }));
+          setIsLocating(false);
+          Alert.alert('GPS Calibrated', `Doorstep coordinates calibrated:\nLat: ${newLat}, Lng: ${newLng}`);
+          return;
+        }
+      } catch (e) {
+        // reverse geocode optional fallback
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        latitude: newLat,
+        longitude: newLng,
+      }));
+      setIsLocating(false);
+      Alert.alert('GPS Calibrated', `Doorstep coordinates calibrated:\nLat: ${newLat}, Lng: ${newLng}`);
+    } catch (err) {
+      setIsLocating(false);
+      Alert.alert('GPS Error', err.message || 'Could not fetch current location.');
     }
   };
 
@@ -172,7 +352,7 @@ export default function RegisterFlow({
               }
 
               const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions?.Images || 'Images',
+                mediaTypes: ['images'],
                 allowsEditing: true,
                 quality: 0.7,
                 base64: true,
@@ -272,12 +452,16 @@ export default function RegisterFlow({
     setIsSubmitting(false);
 
     if (res.success) {
-      setRegistration({
+      const newReg = {
         ...payload,
         id: res.registrationId,
         status: 'pending',
-      });
+      };
+      setRegistration(newReg);
       setScreenMode('submitted');
+      if (onRegistrationSubmitted) {
+        onRegistrationSubmitted(newReg);
+      }
     } else {
       Alert.alert('Submission Error', res.message || 'Could not submit registration.');
     }
@@ -318,13 +502,21 @@ export default function RegisterFlow({
             <Text style={styles.successIcon}>✓</Text>
           </View>
 
-          <Text style={styles.readyTitle}>Your OwnMyPin is ready</Text>
+          <View style={styles.readyTitleRow}>
+            <Text style={styles.readyTitlePrefix}>Your </Text>
+            <Image
+              source={require('../../assets/ownmypin.png')}
+              style={styles.readyLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.readyTitlePrefix}> is ready</Text>
+          </View>
           <Text style={styles.readySubtitle}>Created after your registration was verified.</Text>
 
           {/* Dark Navy DIGIPIN Card */}
           <View style={styles.digipinCard}>
             <Text style={styles.applicantHeaderName}>
-              [{registration?.full_name || formData.fullName}]
+              {registration?.full_name || formData.fullName}
             </Text>
 
             <Text style={styles.digipinCode}>{pin}</Text>
@@ -332,7 +524,7 @@ export default function RegisterFlow({
             {/* Simulated QR Code Box */}
             <View style={styles.qrContainer}>
               <View style={styles.qrInner}>
-                <Text style={styles.qrLabel}>[QR code]</Text>
+                <Text style={styles.qrLabel}>Scan QR</Text>
                 <View style={styles.qrDots}>
                   <View style={styles.qrCornerTopLeft} />
                   <View style={styles.qrCornerTopRight} />
@@ -633,15 +825,60 @@ export default function RegisterFlow({
               />
             </View>
 
-            {/* Map Preview Box */}
-            <View style={styles.mapBox}>
-              <Text style={styles.mapPinIcon}>📍</Text>
-              <Text style={styles.mapTitle}>[Google Map preview]</Text>
-              <Text style={styles.mapCoords}>
-                Lat: {formData.latitude}° N, Lng: {formData.longitude}° E
-              </Text>
-              <View style={styles.verifiedBadge}>
-                <Text style={styles.verifiedText}>✓ GPS Location Calibrated</Text>
+            {/* OpenStreetMap Leaflet Doorstep Preview */}
+            <View style={styles.mapContainer}>
+              <View style={styles.mapHeaderRow}>
+                <View style={styles.mapTitleCol}>
+                  <Text style={styles.mapSectionTitle}>🗺️ OpenStreetMap Doorstep Preview</Text>
+                  <Text style={styles.mapSectionSubtitle}>
+                    Lat: {formData.latitude}° N, Lng: {formData.longitude}° E
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.gpsDetectBtn}
+                  onPress={handleDetectLocation}
+                  disabled={isLocating}
+                  activeOpacity={0.8}
+                >
+                  {isLocating ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Text style={styles.gpsDetectIcon}>🎯</Text>
+                      <Text style={styles.gpsDetectText}>Detect GPS</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.leafletWebviewWrapper}>
+                <WebView
+                  key={`osm-${formData.latitude}-${formData.longitude}`}
+                  originWhitelist={['*']}
+                  source={{ html: getLeafletHtml(formData.latitude, formData.longitude) }}
+                  style={styles.leafletWebview}
+                  scrollEnabled={false}
+                  onMessage={(event) => {
+                    try {
+                      const data = JSON.parse(event.nativeEvent.data);
+                      if (data.latitude && data.longitude) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          latitude: data.latitude,
+                          longitude: data.longitude,
+                        }));
+                      }
+                    } catch (e) {
+                      // ignore parse errors
+                    }
+                  }}
+                />
+              </View>
+
+              <View style={styles.mapFooterNote}>
+                <Text style={styles.mapFooterText}>
+                  💡 Powered by OpenStreetMap (Free Leaflet). Drag pin or tap map to calibrate your exact doorstep location.
+                </Text>
               </View>
             </View>
           </View>
@@ -725,22 +962,22 @@ export default function RegisterFlow({
             <View style={styles.reviewCard}>
               <View style={styles.reviewRow}>
                 <Text style={styles.reviewKey}>Name:</Text>
-                <Text style={styles.reviewVal}>[{formData.fullName}]</Text>
+                <Text style={styles.reviewVal}>{formData.fullName}</Text>
               </View>
               <View style={styles.reviewRow}>
                 <Text style={styles.reviewKey}>Date of birth:</Text>
-                <Text style={styles.reviewVal}>[{formData.dob}]</Text>
+                <Text style={styles.reviewVal}>{formData.dob}</Text>
               </View>
               <View style={styles.reviewRow}>
                 <Text style={styles.reviewKey}>Property:</Text>
                 <Text style={styles.reviewVal}>
-                  [{formData.propertyType}] • [{formData.ownershipType}]
+                  {formData.propertyType} • {formData.ownershipType}
                 </Text>
               </View>
               <View style={styles.reviewRow}>
                 <Text style={styles.reviewKey}>Address:</Text>
                 <Text style={styles.reviewVal} numberOfLines={2}>
-                  [{formData.addressLine}, {formData.city}, {formData.state} {formData.pincode}]
+                  {formData.addressLine}, {formData.city}, {formData.state} {formData.pincode}
                 </Text>
               </View>
               <View style={styles.reviewRow}>
@@ -752,7 +989,7 @@ export default function RegisterFlow({
               <View style={styles.reviewRow}>
                 <Text style={styles.reviewKey}>Photos:</Text>
                 <Text style={styles.reviewVal}>
-                  Selfie + [{formData.propertyPhotos.length}] property photos
+                  Selfie + {formData.propertyPhotos.length} property photos
                 </Text>
               </View>
             </View>
@@ -901,42 +1138,81 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: '#FFFFFF',
   },
-  mapBox: {
-    height: 140,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 16,
+  mapContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#E2E8F0',
+    padding: 14,
+    marginTop: 14,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  mapHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    marginTop: 8,
+    marginBottom: 10,
   },
-  mapPinIcon: {
-    fontSize: 28,
-    marginBottom: 4,
+  mapTitleCol: {
+    flex: 1,
+    marginRight: 8,
   },
-  mapTitle: {
+  mapSectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1E3A8A',
+    color: '#0F172A',
   },
-  mapCoords: {
+  mapSectionSubtitle: {
     fontSize: 12,
     color: '#3B82F6',
     marginTop: 2,
-    marginBottom: 6,
+    fontWeight: '600',
   },
-  verifiedBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
+  gpsDetectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#152238',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    gap: 5,
   },
-  verifiedText: {
-    fontSize: 11,
+  gpsDetectIcon: {
+    fontSize: 13,
+  },
+  gpsDetectText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '700',
-    color: '#059669',
+  },
+  leafletWebviewWrapper: {
+    height: 220,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F1F5F9',
+  },
+  leafletWebview: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'transparent',
+  },
+  mapFooterNote: {
+    marginTop: 8,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  mapFooterText: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 16,
   },
   selfieContainer: {
     alignItems: 'center',
@@ -1306,12 +1582,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '800',
   },
-  readyTitle: {
-    fontSize: 26,
+  readyTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  readyTitlePrefix: {
+    fontSize: 22,
     fontWeight: '800',
     color: '#0F172A',
-    marginBottom: 6,
-    textAlign: 'center',
+  },
+  readyLogo: {
+    width: 130,
+    height: 34,
+    marginHorizontal: 4,
   },
   readySubtitle: {
     fontSize: 14,

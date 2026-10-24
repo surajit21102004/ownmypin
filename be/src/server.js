@@ -8,6 +8,8 @@ const { testConnection, pool } = require('./config/db');
 const apiRoutes = require('./routes/api.routes');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
+const { renderLocationPage } = require('./controllers/pins.controller');
+
 dotenv.config();
 
 const app = express();
@@ -17,6 +19,7 @@ const PORT = process.env.PORT || 5000;
 app.use(
   helmet({
     contentSecurityPolicy: false, // Allows admin panel inline scripts and fonts
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
 app.use(cors());
@@ -30,10 +33,29 @@ if (process.env.NODE_ENV !== 'test') {
 // Serve Admin Panel as static web app
 const adminPath = path.join(__dirname, '../../admin');
 app.use('/admin', express.static(adminPath));
+app.use('/startupindia.png', express.static(path.join(adminPath, 'startupindia.png')));
 
-// Serve Uploaded Files statically
+// Serve Uploaded Files statically with cross-origin & private-network permission
 const uploadsPath = path.join(__dirname, '../uploads');
-app.use('/uploads', express.static(uploadsPath));
+app.use(
+  '/uploads',
+  (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    next();
+  },
+  express.static(uploadsPath)
+);
+
+// Public Doorstep Location Viewer (when scanning QR code)
+app.get('/location', renderLocationPage);
+app.get('/pin/:pinCode', renderLocationPage);
+app.get('/p/:pinCode', renderLocationPage);
 
 // API Routes
 app.use('/api', apiRoutes);
@@ -46,6 +68,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     adminPanel: `http://localhost:${PORT}/admin`,
     apiDocumentation: `http://localhost:${PORT}/api`,
+    sampleQrLocation: `http://localhost:${PORT}/location?pin=WB-09-45896524`,
   });
 });
 

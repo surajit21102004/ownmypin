@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "start:be": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test:db": "node scripts/test-db.js",
     "transfer:db": "node scripts/transfer-db.js"
@@ -20,7 +21,8 @@
     "helmet": "^8.3.0",
     "morgan": "^1.12.1",
     "multer": "^2.4.0",
-    "mysql2": "^3.24.6"
+    "mysql2": "^3.24.6",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

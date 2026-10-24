@@ -90,6 +90,19 @@ export default function SplashScreen({ onFinish }) {
             <Text style={styles.pillText}>DIGIPIN Standard • Powered by OwnMyPin</Text>
           </View>
         </Animated.View>
+
+        {/* Recognised by Startup India Footer (matching reference image) */}
+        <Animated.View style={[styles.startupFooter, { opacity: subtitleFade }]}>
+          <Text style={styles.recognisedText}>Recognised by </Text>
+          <View style={styles.startupBrandRow}>
+            <Text style={styles.hashText}>#</Text>
+            <Image
+              source={require('../../assets/startupindia.png')}
+              style={styles.startupLogo}
+              resizeMode="contain"
+            />
+          </View>
+        </Animated.View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -97,13 +110,15 @@ export default function SplashScreen({ onFinish }) {
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: '#FFFFFF',
-    zIndex: 999,
     justifyContent: 'center',
     alignItems: 'center',
   },
   touchArea: {
+    flex: 1,
     width: '100%',
     height: '100%',
     justifyContent: 'center',
@@ -145,5 +160,34 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  startupFooter: {
+    position: 'absolute',
+    bottom: 45,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  recognisedText: {
+    fontSize: 15,
+    color: '#334155',
+    fontWeight: '600',
+  },
+  startupBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  hashText: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#F97316',
+    marginRight: 3,
+  },
+  startupLogo: {
+    height: 36,
+    width: 142,
   },
 });

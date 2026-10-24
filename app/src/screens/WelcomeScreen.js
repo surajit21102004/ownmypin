@@ -120,6 +120,17 @@ export default function WelcomeScreen({ onNavigateToRegister, onNavigateToLogin 
           </TouchableOpacity>
         </View>
 
+        {/* Recognised by Startup India */}
+        <View style={styles.startupBadgeRow}>
+          <Text style={styles.startupLabel}>Recognised by </Text>
+          <Text style={styles.startupHash}>#</Text>
+          <Image
+            source={require('../../assets/startupindia.png')}
+            style={styles.startupLogoSmall}
+            resizeMode="contain"
+          />
+        </View>
+
         {/* Privacy Policy Footer */}
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>
@@ -364,6 +375,28 @@ const styles = StyleSheet.create({
     color: '#152238',
     fontSize: 16,
     fontWeight: '700',
+  },
+  startupBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  startupLabel: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  startupHash: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#F97316',
+    marginRight: 2,
+  },
+  startupLogoSmall: {
+    height: 28,
+    width: 110,
   },
   footerContainer: {
     marginTop: 8,
