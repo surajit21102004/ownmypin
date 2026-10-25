@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const os = require('os');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -14,6 +15,18 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return '127.0.0.1';
+}
 
 // Security & Utility Middleware
 app.use(
@@ -77,12 +90,15 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start server
-const server = app.listen(PORT, async () => {
+const HOST = '0.0.0.0';
+const server = app.listen(PORT, HOST, async () => {
+  const lanIp = getLocalIp();
   console.log(`===============================================`);
   console.log(` ownMyPin Backend Server running on port ${PORT}`);
   console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(` API URL:     http://localhost:${PORT}/api`);
-  console.log(` Admin Panel: http://localhost:${PORT}/admin`);
+  console.log(` API (Local): http://localhost:${PORT}/api`);
+  console.log(` API (Phone): http://${lanIp}:${PORT}/api`);
+  console.log(` Admin Panel: http://${lanIp}:${PORT}/admin`);
   console.log(`===============================================`);
 
   // Verify DB on boot
@@ -109,3 +125,4 @@ async function gracefulShutdown() {
 }
 
 module.exports = app;
+// Server restart trigger: 2026-10-25

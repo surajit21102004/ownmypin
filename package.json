@@ -4,11 +4,13 @@
   "description": "ownMyPin - Expo React Native (JavaScript) Mobile App & Express Node.js MySQL Backend",
   "private": true,
   "scripts": {
+    "dev": "npm --prefix app run dev",
+    "dev:app": "npm --prefix app run dev",
+    "start:app": "npm --prefix app start",
     "start:be": "npm --prefix be start",
     "dev:be": "npm --prefix be run dev",
     "test:db": "npm --prefix be run test:db",
     "transfer:db": "npm --prefix be run transfer:db",
-    "start:app": "npm --prefix app start",
     "android": "npm --prefix app run android",
     "ios": "npm --prefix app run ios",
     "web": "npm --prefix app run web"

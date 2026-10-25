@@ -43,7 +43,7 @@ export default function MainAppContainer({
 
   const fetchNotificationsData = async () => {
     try {
-      const res = await getNotifications();
+      const res = await getNotifications(user?.phone);
       if (res && res.success && res.notifications) {
         setNotifications(res.notifications);
         setUnreadCount(res.unreadCount || res.notifications.length);

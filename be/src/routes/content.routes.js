@@ -2,6 +2,7 @@ const express = require('express');
 const {
   getNews,
   getAds,
+  getPopup,
   getNotifications,
   getNearbyBusinesses,
 } = require('../controllers/content.controller');
@@ -10,6 +11,7 @@ const router = express.Router();
 
 router.get('/news', getNews);
 router.get('/ads', getAds);
+router.get('/popup', getPopup);
 router.get('/notifications', getNotifications);
 router.get('/nearby', getNearbyBusinesses);
 

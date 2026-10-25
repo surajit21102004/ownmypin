@@ -12,6 +12,18 @@ import {
 } from 'react-native';
 import { COLORS } from '../constants/theme';
 import { TRANSLATIONS } from '../constants/translations';
+import {
+  VerifiedCheckIcon,
+  CloseIcon,
+  CameraIcon,
+  StoreIcon,
+  MapPinIcon,
+  StarIcon,
+  ZoomIcon,
+  NavigationIcon,
+  ShareIcon,
+  ShieldLockIcon,
+} from './SvgIcons';
 
 export default function ProfileDetailsModal({
   visible,
@@ -49,6 +61,8 @@ export default function ProfileDetailsModal({
     }
   };
 
+  const [previewImage, setPreviewImage] = React.useState(null);
+
   return (
     <Modal
       visible={visible}
@@ -68,7 +82,7 @@ export default function ProfileDetailsModal({
               </View>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <Text style={styles.closeText}>✕</Text>
+              <CloseIcon size={18} color="#64748B" />
             </TouchableOpacity>
           </View>
 
@@ -81,7 +95,7 @@ export default function ProfileDetailsModal({
             <View style={styles.topProfileCard}>
               <View style={styles.avatarWrap}>
                 {profile.selfieUrl ? (
-                  <Image source={{ uri: profile.selfieUrl }} style={styles.avatarImg} />
+                  <Image source={{ uri: profile.selfieUrl }} style={styles.avatarImg} resizeMode="cover" />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
                     <Text style={styles.avatarLetter}>
@@ -90,7 +104,17 @@ export default function ProfileDetailsModal({
                   </View>
                 )}
                 <View style={styles.verifiedBadgeCircle}>
-                  <Text style={styles.badgeCheck}>✓</Text>
+                  <VerifiedCheckIcon size={11} color="#FFFFFF" />
+                </View>
+                <View style={[styles.selfieTagPill, profile.isBusiness && { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+                  {profile.isBusiness ? (
+                    <StoreIcon size={12} color="#92400E" />
+                  ) : (
+                    <CameraIcon size={12} color="#475569" />
+                  )}
+                  <Text style={[styles.selfieTagText, profile.isBusiness && { color: '#92400E' }]}>
+                    {profile.isBusiness ? 'Shop Logo' : 'Applicant Selfie'}
+                  </Text>
                 </View>
               </View>
 
@@ -99,6 +123,34 @@ export default function ProfileDetailsModal({
                 <View style={styles.pinPill}>
                   <Text style={styles.pinText}>{profile.pin}</Text>
                 </View>
+
+                {/* Categorised Property Badges */}
+                <View style={styles.categoryBadgeRow}>
+                  {profile.isBusiness ? (
+                    <>
+                      <View style={[styles.catBadgeItem, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+                        <Text style={[styles.catBadgeText, { color: '#92400E' }]}>🏪 Business</Text>
+                      </View>
+                      <View style={[styles.catBadgeItem, { backgroundColor: '#CCFBF1', borderColor: '#99F6E4' }]}>
+                        <Text style={[styles.catBadgeText, { color: '#0F766E' }]}>🏷️ {profile.propertyType || 'Commercial'}</Text>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <View style={styles.catBadgeItem}>
+                        <Text style={styles.catBadgeText}>
+                          {profile.propertyType === 'Flat' ? '🏢 Flat' : profile.propertyType === 'Shop' ? '🏪 Shop' : '🏠 House'}
+                        </Text>
+                      </View>
+                      <View style={[styles.catBadgeItem, styles.catBadgeOwn]}>
+                        <Text style={[styles.catBadgeText, styles.catBadgeOwnText]}>
+                          {profile.ownershipType === 'Rent' ? '📋 Rented' : '🔑 Self-Owned'}
+                        </Text>
+                      </View>
+                    </>
+                  )}
+                </View>
+
                 <View style={styles.pinBreakdownMiniRow}>
                   <View style={styles.pinMiniChip}>
                     <Text style={styles.pinMiniChipText}>{(profile.pin || '').split('-')[0] || 'WB'} · State</Text>
@@ -110,8 +162,14 @@ export default function ProfileDetailsModal({
                     <Text style={styles.pinMiniChipText}>{(profile.pin || '').split('-')[2] || 'Unique'} · PIN</Text>
                   </View>
                 </View>
-                <Text style={styles.locationSummary}>📍 {profile.location}</Text>
-                <Text style={styles.ratingText}>★ {profile.rating || '4.8'} (Official Verification)</Text>
+                <View style={styles.locRow}>
+                  <MapPinIcon size={13} color="#64748B" />
+                  <Text style={styles.locationSummary}>{profile.location}</Text>
+                </View>
+                <View style={styles.ratingRow}>
+                  <StarIcon size={13} color="#D97706" />
+                  <Text style={styles.ratingText}>{profile.rating || '4.8'} (Official Verification)</Text>
+                </View>
               </View>
             </View>
 
@@ -228,18 +286,34 @@ export default function ProfileDetailsModal({
               </View>
             )}
 
-            {/* Property Photos (if available and not privacy locked) */}
+            {/* Property Photos (Given Doorstep & Exterior Images) */}
             {!isPrivacyLocked && profile.propertyPhotos && profile.propertyPhotos.length > 0 && (
               <View style={styles.infoCard}>
-                <Text style={styles.cardHeaderTitle}>📸 {t.propertyPhotos}</Text>
+                <View style={styles.photoHeaderRow}>
+                  <Text style={styles.cardHeaderTitle}>📸 Given Doorstep Images</Text>
+                  <View style={styles.photoCountBadge}>
+                    <Text style={styles.photoCountText}>{profile.propertyPhotos.length} Photos</Text>
+                  </View>
+                </View>
+                <Text style={styles.photoSubHint}>Tap any photo to view full doorstep image:</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosScroll}>
                   {profile.propertyPhotos.map((photoUri, idx) => (
-                    <Image
+                    <TouchableOpacity
                       key={idx}
-                      source={{ uri: photoUri }}
-                      style={styles.propertyThumb}
-                      resizeMode="cover"
-                    />
+                      activeOpacity={0.88}
+                      onPress={() => setPreviewImage(photoUri)}
+                      style={styles.photoCardWrap}
+                    >
+                      <Image
+                        source={{ uri: photoUri }}
+                        style={styles.propertyThumb}
+                        resizeMode="cover"
+                      />
+                      <View style={styles.photoZoomOverlay}>
+                        <ZoomIcon size={13} color="#FFFFFF" />
+                        <Text style={styles.zoomIconText}>Zoom</Text>
+                      </View>
+                    </TouchableOpacity>
                   ))}
                 </ScrollView>
               </View>
@@ -252,8 +326,13 @@ export default function ProfileDetailsModal({
                 activeOpacity={0.8}
                 onPress={handleOpenMaps}
               >
+                {isPrivacyLocked ? (
+                  <ShieldLockIcon size={16} color="#FFFFFF" />
+                ) : (
+                  <NavigationIcon size={15} color="#FFFFFF" />
+                )}
                 <Text style={styles.navigateBtnText}>
-                  {isPrivacyLocked ? '🔒 Navigation Locked (Private)' : `🧭 ${t.openInMaps}`}
+                  {isPrivacyLocked ? 'Navigation Locked (Private)' : t.openInMaps}
                 </Text>
               </TouchableOpacity>
 
@@ -262,7 +341,8 @@ export default function ProfileDetailsModal({
                 activeOpacity={0.8}
                 onPress={handleShare}
               >
-                <Text style={styles.shareBtnText}>📤 {t.sharePin}</Text>
+                <ShareIcon size={15} color="#0F172A" />
+                <Text style={styles.shareBtnText}>{t.sharePin}</Text>
               </TouchableOpacity>
             </View>
 
@@ -279,6 +359,31 @@ export default function ProfileDetailsModal({
           </ScrollView>
         </View>
       </View>
+
+      {/* Fullscreen Photo Zoom Modal */}
+      {previewImage && (
+        <Modal
+          visible={!!previewImage}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setPreviewImage(null)}
+        >
+          <View style={styles.fullscreenModalOverlay}>
+            <TouchableOpacity
+              style={styles.fullscreenCloseBtn}
+              onPress={() => setPreviewImage(null)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.fullscreenCloseText}>✕ Close</Text>
+            </TouchableOpacity>
+            <Image
+              source={{ uri: previewImage }}
+              style={styles.fullscreenImage}
+              resizeMode="contain"
+            />
+          </View>
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -367,19 +472,61 @@ const styles = StyleSheet.create({
   },
   avatarWrap: {
     position: 'relative',
+    alignItems: 'center',
   },
   avatarImg: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2.5,
+    borderColor: '#0284C7',
+    backgroundColor: '#E2E8F0',
   },
   avatarPlaceholder: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  selfieTagPill: {
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  selfieTagText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  categoryBadgeRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginVertical: 4,
+  },
+  catBadgeItem: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  catBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  catBadgeOwn: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+  },
+  catBadgeOwnText: {
+    color: '#1D4ED8',
   },
   avatarLetter: {
     fontSize: 26,
@@ -388,8 +535,8 @@ const styles = StyleSheet.create({
   },
   verifiedBadgeCircle: {
     position: 'absolute',
-    bottom: -2,
-    right: -2,
+    top: 48,
+    right: 2,
     backgroundColor: '#10B981',
     width: 20,
     height: 20,
@@ -478,21 +625,92 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontFamily: 'monospace',
   },
+  photoHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  photoCountBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  photoCountText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1D4ED8',
+  },
+  photoSubHint: {
+    fontSize: 11,
+    color: '#64748B',
+    marginBottom: 8,
+  },
   photosScroll: {
-    marginTop: 8,
+    marginTop: 4,
+  },
+  photoCardWrap: {
+    position: 'relative',
+    marginRight: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   propertyThumb: {
-    width: 90,
-    height: 90,
-    borderRadius: 10,
-    marginRight: 10,
+    width: 140,
+    height: 105,
+    borderRadius: 12,
     backgroundColor: '#E2E8F0',
+  },
+  photoZoomOverlay: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  zoomIconText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  fullscreenModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  fullscreenCloseBtn: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  fullscreenCloseText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  fullscreenImage: {
+    width: '100%',
+    height: '80%',
   },
   actionButtonsCol: {
     gap: 10,
     marginTop: 4,
   },
   navigateBtn: {
+    flexDirection: 'row',
+    gap: 8,
     backgroundColor: '#112240',
     paddingVertical: 14,
     borderRadius: 14,
@@ -550,6 +768,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   shareBtn: {
+    flexDirection: 'row',
+    gap: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
@@ -562,6 +782,18 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     fontSize: 14,
     fontWeight: '700',
+  },
+  locRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 3,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
   },
   pinBreakdownMiniRow: {
     flexDirection: 'row',

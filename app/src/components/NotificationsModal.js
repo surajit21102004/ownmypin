@@ -71,7 +71,9 @@ export default function NotificationsModal({
                 <View style={styles.notifTextCol}>
                   <Text style={styles.notifTitle}>{item.title}</Text>
                   <Text style={styles.notifTime}>{item.time || 'Recent'}</Text>
-                  {item.desc ? <Text style={styles.notifDesc}>{item.desc}</Text> : null}
+                  {(item.desc || item.message) ? (
+                    <Text style={styles.notifDesc}>{item.desc || item.message}</Text>
+                  ) : null}
                 </View>
               </View>
             ))}

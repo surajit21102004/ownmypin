@@ -13,6 +13,13 @@ const {
   updateSettings,
   createNearbyBusiness,
   deleteNearbyBusiness,
+  getBusinesses,
+  approveBusiness,
+  rejectBusiness,
+  getPopupSettings,
+  updatePopupSettings,
+  sendBroadcastNotification,
+  deleteNotification,
 } = require('../controllers/admin.controller');
 const { getVerifiedPins } = require('../controllers/pins.controller');
 const { getNews, getAds, getNearbyBusinesses } = require('../controllers/content.controller');
@@ -40,10 +47,22 @@ router.delete('/ads/:id', deleteAd);
 router.get('/settings', getSettings);
 router.post('/settings', updateSettings);
 
-// Businesses
+// Businesses & Applications
 router.get('/businesses', getNearbyBusinesses);
 router.post('/businesses', createNearbyBusiness);
 router.delete('/businesses/:id', deleteNearbyBusiness);
+
+router.get('/business-applications', getBusinesses);
+router.post('/business-applications/:id/approve', approveBusiness);
+router.post('/business-applications/:id/reject', rejectBusiness);
+
+// Popup Settings (App Launch Offer & Action Redirect)
+router.get('/popup', getPopupSettings);
+router.post('/popup', updatePopupSettings);
+
+// Broadcast Notifications
+router.post('/notifications', sendBroadcastNotification);
+router.delete('/notifications/:id', deleteNotification);
 
 // Verified PINs
 router.get('/pins', getVerifiedPins);

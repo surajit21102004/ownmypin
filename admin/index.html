@@ -766,6 +766,12 @@
       <li class="menu-item active" onclick="switchAdminTab('registrations', this)">
         <span>📋</span> New registrations
       </li>
+      <li class="menu-item" onclick="switchAdminTab('businesses', this)">
+        <span>🏪</span> Business Registrations
+      </li>
+      <li class="menu-item" onclick="switchAdminTab('popup', this)">
+        <span>🎉</span> App Launch Popup
+      </li>
       <li class="menu-item" onclick="switchAdminTab('news', this)">
         <span>📰</span> Daily News (DSC)
       </li>
@@ -1073,6 +1079,162 @@
         </table>
       </div>
     </div>
+
+    <!-- VIEW 6: BUSINESS REGISTRATIONS & VERIFICATION -->
+    <div id="viewBusinesses" class="view-container" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; gap: 8px;">
+          <button class="filter-btn active" onclick="filterBusinesses('all', this)">All Businesses</button>
+          <button class="filter-btn" onclick="filterBusinesses('pending', this)">Pending</button>
+          <button class="filter-btn" onclick="filterBusinesses('approved', this)">Approved</button>
+          <button class="filter-btn" onclick="filterBusinesses('rejected', this)">Rejected</button>
+        </div>
+        <button class="action-btn" onclick="loadBusinesses()" style="background: #1e293b; color: #fff;">🔄 Refresh</button>
+      </div>
+
+      <div class="list-card">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th>Shop Name</th>
+              <th>Category</th>
+              <th>Owner & Phone</th>
+              <th>City & Location</th>
+              <th>Govt Document</th>
+              <th>Media</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="businessesList">
+            <tr>
+              <td colspan="8" style="text-align: center; color: #94a3b8; padding: 30px;">
+                Loading business applications...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW 7: APP LAUNCH POPUP & BROADCAST NOTIFICATIONS -->
+    <div id="viewPopup" class="view-container" style="display: none;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <!-- Left: Popup Settings Form -->
+        <div class="card" style="background:#fff; border-radius:18px; padding:24px; border:1px solid var(--border-color);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="font-size:18px; font-weight:800; color:#0f172a;">🎉 App Start Offer Popup</h2>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700; font-size:13px; color:#334155;">
+              <input type="checkbox" id="popupEnabled" style="width:18px; height:18px;" onchange="updatePopupPreview()" />
+              Enable on App Launch
+            </label>
+          </div>
+          <p style="font-size:13px; color:#64748b; margin-bottom:20px;">
+            When users open the OwnMyPin mobile app, this popup modal will greet them with special offers, refer rewards, or announcements with direct action redirect.
+          </p>
+
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+              <label class="form-label">Popup Title</label>
+              <input type="text" id="popupTitle" class="form-input" placeholder="e.g. Special Offer: Refer & Earn!" oninput="updatePopupPreview()" style="width:100%;" />
+            </div>
+
+            <div>
+              <label class="form-label">Message / Promo Description</label>
+              <textarea id="popupMessage" class="form-textarea" placeholder="Invite friends or neighbors to claim their digital address..." oninput="updatePopupPreview()" style="width:100%;"></textarea>
+            </div>
+
+            <div>
+              <label class="form-label">Banner Image URL</label>
+              <input type="text" id="popupImageUrl" class="form-input" placeholder="https://images.unsplash.com/..." oninput="updatePopupPreview()" style="width:100%;" />
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div>
+                <label class="form-label">Action / Redirect Area</label>
+                <select id="popupAction" class="form-select" onchange="updatePopupPreview()" style="width:100%;">
+                  <option value="refer">🎁 Refer & Earn Reward Modal</option>
+                  <option value="scanner">📷 Live QR Scanner Screen</option>
+                  <option value="register">🏠 Register Doorstep PIN</option>
+                  <option value="nearby">🏪 Nearby Verified Shops</option>
+                  <option value="dsc">📰 Daily News (DSC Screen)</option>
+                  <option value="external">🌐 External Website Link</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label">Button Text</label>
+                <input type="text" id="popupButtonText" class="form-input" placeholder="e.g. Refer & Earn" oninput="updatePopupPreview()" style="width:100%;" />
+              </div>
+            </div>
+
+            <div id="popupExternalUrlCol" style="display:none;">
+              <label class="form-label">External Action URL</label>
+              <input type="text" id="popupActionUrl" class="form-input" placeholder="https://yourwebsite.com/offer" style="width:100%;" />
+            </div>
+
+            <button class="action-btn" onclick="savePopupSettings()" style="background:#152238; color:#fff; font-weight:800; padding:14px; border-radius:12px; margin-top:10px;">
+              💾 Save Popup Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Live Mobile App Popup Preview & Broadcast Notification -->
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <!-- Live Preview Card -->
+          <div class="card" style="background:#f1f5f9; border-radius:18px; padding:20px; border:1px solid var(--border-color); text-align:center;">
+            <div style="font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:12px;">
+              📱 Live App Mockup Preview
+            </div>
+            <div style="max-width:300px; margin:0 auto; background:#fff; border-radius:20px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,0.1); border:1px solid #cbd5e1; text-align:center;">
+              <div id="previewBadge" style="display:inline-block; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; margin-bottom:8px;">
+                🔥 SPECIAL OFFER
+              </div>
+              <img id="previewImage" src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&auto=format&fit=crop&q=60" style="width:100%; height:110px; object-fit:cover; border-radius:12px; margin-bottom:10px;" />
+              <div id="previewTitle" style="font-size:16px; font-weight:800; color:#0f172a; margin-bottom:6px;">
+                Special Offer: Refer & Earn!
+              </div>
+              <div id="previewMessage" style="font-size:11px; color:#64748b; line-height:16px; margin-bottom:14px;">
+                Invite your friends or neighbors to claim their verified digital address and earn rewards.
+              </div>
+              <div id="previewButton" style="background:#f59e0b; color:#0f172a; font-size:13px; font-weight:800; padding:10px; border-radius:10px; margin-bottom:6px;">
+                Refer & Earn
+              </div>
+              <div style="font-size:11px; color:#94a3b8;">Maybe Later</div>
+            </div>
+          </div>
+
+          <!-- Send Broadcast Notification to App -->
+          <div class="card" style="background:#fff; border-radius:18px; padding:20px; border:1px solid var(--border-color);">
+            <h3 style="font-size:16px; font-weight:800; color:#0f172a; margin-bottom:8px;">📢 Send Real Notification to App</h3>
+            <p style="font-size:12px; color:#64748b; margin-bottom:14px;">
+              Broadcast instant notification alerts to all users or target by phone.
+            </p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <input type="text" id="notifTitle" class="form-input" placeholder="Notification Title..." style="width:100%;" />
+              <textarea id="notifMessage" class="form-textarea" placeholder="Detailed notification alert..." style="width:100%; min-height:60px;"></textarea>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <select id="notifType" class="form-select" style="width:100%;">
+                  <option value="admin_broadcast">Admin Announcement</option>
+                  <option value="offer">Special Offer / Reward</option>
+                  <option value="business_alert">Nearby Business Alert</option>
+                  <option value="pin_status">PIN Verification Status</option>
+                </select>
+                <select id="notifAction" class="form-select" style="width:100%;">
+                  <option value="profile">Open Doorstep PIN</option>
+                  <option value="refer">Open Refer & Earn</option>
+                  <option value="nearby">Open Nearby Shops</option>
+                  <option value="dsc">Open Daily News</option>
+                </select>
+              </div>
+              <button class="action-btn" onclick="sendBroadcastNotif()" style="background:#f59e0b; color:#0f172a; font-weight:800; padding:12px; border-radius:10px;">
+                🚀 Broadcast Notification to App
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <div id="toast" class="toast"></div>
@@ -1125,7 +1287,7 @@
   </div>
 
   <script>
-    const API_SERVER_ORIGIN = (window.location.origin.includes('localhost:5000') || window.location.origin.includes('127.0.0.1:5000'))
+    const API_SERVER_ORIGIN = (window.location.protocol.startsWith('http') && window.location.origin)
       ? window.location.origin
       : 'http://localhost:5000';
     const API_BASE = `${API_SERVER_ORIGIN}/api`;
@@ -1137,7 +1299,7 @@
       document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
       if (el) el.classList.add('active');
 
-      const views = ['viewRegistrations', 'viewNews', 'viewAds', 'viewMonetization', 'viewVerified'];
+      const views = ['viewRegistrations', 'viewBusinesses', 'viewPopup', 'viewNews', 'viewAds', 'viewMonetization', 'viewVerified'];
       views.forEach(v => {
         const elem = document.getElementById(v);
         if (elem) elem.style.display = 'none';
@@ -1149,6 +1311,14 @@
         document.getElementById('viewRegistrations').style.display = 'block';
         titleEl.textContent = 'New registrations';
         loadRegistrations();
+      } else if (tab === 'businesses') {
+        document.getElementById('viewBusinesses').style.display = 'block';
+        titleEl.textContent = 'Business Registrations & Verification';
+        loadBusinesses();
+      } else if (tab === 'popup') {
+        document.getElementById('viewPopup').style.display = 'block';
+        titleEl.textContent = 'App Launch Offer Popup & Notifications';
+        loadPopupSettings();
       } else if (tab === 'news') {
         document.getElementById('viewNews').style.display = 'block';
         titleEl.textContent = 'Daily News (DSC Screen)';
@@ -1678,6 +1848,248 @@
         }
       } catch (e) {
         showToast('Failed to load pins directory');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // BUSINESS REGISTRATIONS & VERIFICATION
+    // -------------------------------------------------------------
+    let allBusinesses = [];
+    let currentBusinessFilter = 'all';
+
+    async function loadBusinesses() {
+      try {
+        const tbody = document.getElementById('businessesList');
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 20px;">Loading businesses...</td></tr>';
+        const res = await fetch(`${API_BASE}/admin/business-applications`);
+        const data = await res.json();
+        if (data.success) {
+          allBusinesses = data.businesses || [];
+          renderBusinesses();
+        } else {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #ef4444; padding: 20px;">Failed to load businesses.</td></tr>';
+        }
+      } catch (e) {
+        showToast('Error loading business applications');
+      }
+    }
+
+    function filterBusinesses(status, el) {
+      currentBusinessFilter = status;
+      if (el) {
+        el.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+      }
+      renderBusinesses();
+    }
+
+    function renderBusinesses() {
+      const tbody = document.getElementById('businessesList');
+      const filtered = allBusinesses.filter(b => {
+        if (currentBusinessFilter === 'all') return true;
+        return b.status === currentBusinessFilter;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 30px;">No ${currentBusinessFilter} business applications found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(b => {
+        const docUrl = resolvePhotoUrl(b.doc_file_url);
+        const logoUrl = resolvePhotoUrl(b.shop_logo_url);
+        const statusBadge = b.status === 'approved'
+          ? '<span style="background:#dcfce7; color:#15803d; font-weight:800; font-size:11px; padding:4px 8px; border-radius:6px;">✓ Approved</span>'
+          : b.status === 'rejected'
+          ? '<span style="background:#fee2e2; color:#b91c1c; font-weight:800; font-size:11px; padding:4px 8px; border-radius:6px;">✕ Rejected</span>'
+          : '<span style="background:#fef3c7; color:#b45309; font-weight:800; font-size:11px; padding:4px 8px; border-radius:6px;">⏳ Pending</span>';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:800; color:#0f172a; font-size:14px;">${b.shop_name}</div>
+              ${b.pin_code ? `<div style="font-family:monospace; color:#f59e0b; font-weight:800; font-size:11px;">PIN: ${b.pin_code}</div>` : ''}
+            </td>
+            <td><span style="background:#f1f5f9; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700;">${b.category || 'Retail'}</span></td>
+            <td>
+              <div style="font-weight:700; color:#334155;">${b.owner_name}</div>
+              <div style="font-size:11px; color:#64748b;">${b.phone}</div>
+            </td>
+            <td>
+              <div style="font-size:12px; color:#334155;">${b.address_line || ''}, ${b.city || ''}</div>
+              <div style="font-size:10px; font-family:monospace; color:#0284c7;">GPS: ${b.latitude}, ${b.longitude}</div>
+            </td>
+            <td>
+              <div style="font-weight:800; color:#1e293b; font-size:12px;">${b.doc_type || 'GSTIN'}:</div>
+              <div style="font-family:monospace; font-size:11px; color:#475569; margin-bottom:4px;">${b.doc_number || 'N/A'}</div>
+              ${b.doc_file_url ? `
+                <button onclick="openPhotoModal('${docUrl}', '${b.doc_type || 'Govt Document'} - ${b.shop_name}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">
+                  📄 View Document
+                </button>
+              ` : '<span style="font-size:11px; color:#94a3b8;">No file</span>'}
+            </td>
+            <td>
+              ${logoUrl ? `
+                <button onclick="openPhotoModal('${logoUrl}', '${b.shop_name} - Logo')" style="background:#f8fafc; border:1px solid #cbd5e1; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">
+                  🖼️ Logo
+                </button>
+              ` : '<span style="font-size:11px; color:#94a3b8;">None</span>'}
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+              ${b.status === 'pending' ? `
+                <div style="display:flex; gap:6px;">
+                  <button onclick="approveBusinessApp(${b.id}, '${(b.shop_name || '').replace(/'/g, "\\'")}')" style="background:#10b981; color:#fff; border:none; padding:6px 10px; border-radius:6px; font-size:11px; font-weight:800; cursor:pointer;">
+                    ✓ Approve
+                  </button>
+                  <button onclick="rejectBusinessApp(${b.id}, '${(b.shop_name || '').replace(/'/g, "\\'")}')" style="background:#ef4444; color:#fff; border:none; padding:6px 8px; border-radius:6px; font-size:11px; font-weight:800; cursor:pointer;">
+                    ✕
+                  </button>
+                </div>
+              ` : `<span style="font-size:11px; color:#94a3b8;">Completed</span>`}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function approveBusinessApp(id, name) {
+      if (!confirm(`Approve business registration for "${name}" and generate verified business PIN?`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin/business-applications/${id}/approve`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✓ Business "${name}" approved! Issued PIN: ${data.pinCode}`);
+          loadBusinesses();
+        } else {
+          showToast(data.message || 'Approval failed');
+        }
+      } catch (e) {
+        showToast('Error approving business');
+      }
+    }
+
+    async function rejectBusinessApp(id, name) {
+      const reason = prompt(`Enter rejection reason for "${name}":`, 'Document details could not be validated.');
+      if (reason === null) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin/business-applications/${id}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✕ Business "${name}" rejected`);
+          loadBusinesses();
+        } else {
+          showToast(data.message || 'Rejection failed');
+        }
+      } catch (e) {
+        showToast('Error rejecting business');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // APP LAUNCH POPUP & BROADCAST NOTIFICATIONS
+    // -------------------------------------------------------------
+    async function loadPopupSettings() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/popup`);
+        const data = await res.json();
+        if (data.success && data.popup) {
+          const p = data.popup;
+          document.getElementById('popupEnabled').checked = p.popup_enabled === 'true' || p.popup_enabled === '1' || p.popup_enabled === true;
+          document.getElementById('popupTitle').value = p.popup_title || '';
+          document.getElementById('popupMessage').value = p.popup_message || '';
+          document.getElementById('popupImageUrl').value = p.popup_image_url || '';
+          document.getElementById('popupButtonText').value = p.popup_button_text || 'Refer & Earn';
+          document.getElementById('popupAction').value = p.popup_action || 'refer';
+          document.getElementById('popupActionUrl').value = p.popup_action_url || '';
+          updatePopupPreview();
+        }
+      } catch (e) {
+        showToast('Failed to load popup settings');
+      }
+    }
+
+    function updatePopupPreview() {
+      const title = document.getElementById('popupTitle').value || 'Special Offer: Refer & Earn!';
+      const msg = document.getElementById('popupMessage').value || 'Invite friends or neighbors to claim their digital address...';
+      const img = document.getElementById('popupImageUrl').value || 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&auto=format&fit=crop&q=60';
+      const btn = document.getElementById('popupButtonText').value || 'Refer & Earn';
+      const action = document.getElementById('popupAction').value;
+
+      document.getElementById('previewTitle').textContent = title;
+      document.getElementById('previewMessage').textContent = msg;
+      document.getElementById('previewImage').src = img;
+      document.getElementById('previewButton').textContent = btn;
+
+      const extCol = document.getElementById('popupExternalUrlCol');
+      if (extCol) extCol.style.display = action === 'external' ? 'block' : 'none';
+    }
+
+    async function savePopupSettings() {
+      const enabled = document.getElementById('popupEnabled').checked;
+      const title = document.getElementById('popupTitle').value.trim();
+      const message = document.getElementById('popupMessage').value.trim();
+      const imageUrl = document.getElementById('popupImageUrl').value.trim();
+      const buttonText = document.getElementById('popupButtonText').value.trim();
+      const action = document.getElementById('popupAction').value;
+      const actionUrl = document.getElementById('popupActionUrl').value.trim();
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/popup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            enabled,
+            title,
+            message,
+            imageUrl,
+            buttonText,
+            action,
+            actionUrl,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✓ App launch popup settings saved successfully!');
+        } else {
+          showToast(data.message || 'Failed to save settings');
+        }
+      } catch (e) {
+        showToast('Error saving popup settings');
+      }
+    }
+
+    async function sendBroadcastNotif() {
+      const title = document.getElementById('notifTitle').value.trim();
+      const message = document.getElementById('notifMessage').value.trim();
+      const type = document.getElementById('notifType').value;
+      const action_type = document.getElementById('notifAction').value;
+
+      if (!title || !message) {
+        showToast('Please enter both title and message for notification');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/notifications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, message, type, action_type }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✓ Real notification broadcasted to all mobile app users!');
+          document.getElementById('notifTitle').value = '';
+          document.getElementById('notifMessage').value = '';
+        } else {
+          showToast(data.message || 'Notification broadcast failed');
+        }
+      } catch (e) {
+        showToast('Error broadcasting notification');
       }
     }
 

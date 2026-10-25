@@ -1,14 +1,29 @@
 import { Platform, NativeModules } from 'react-native';
+import Constants from 'expo-constants';
 
 const BACKEND_PORT = 5000;
-// Your computer's current Wi-Fi IP address
-export const LOCAL_PC_IP = '192.168.0.100';
+// Your computer's current Wi-Fi LAN IP address
+export const LOCAL_PC_IP = '192.168.1.6';
+
+/**
+ * Extracts IPv4 address or hostname from an arbitrary URI/URL string
+ */
+function extractHost(str) {
+  if (!str || typeof str !== 'string') return null;
+  const cleaned = str.replace(/^[a-z]+:\/\//i, '');
+  const hostWithPort = cleaned.split('/')[0];
+  const host = hostWithPort.split(':')[0];
+  if (host && host !== 'localhost' && host !== '127.0.0.1' && host !== '10.0.2.2') {
+    return host;
+  }
+  return null;
+}
 
 /**
  * Automatically determine the backend URL:
  * 1. If running in Expo Go on a physical device, Metro bundle URL contains the computer's IP!
  * 2. If running on Web, uses current window location or localhost
- * 3. Fallbacks to the known local PC Wi-Fi IP
+ * 3. Fallbacks to the known local PC Wi-Fi IP (192.168.1.6)
  */
 function resolveBackendBaseUrl() {
   // If running in Web browser
@@ -17,24 +32,37 @@ function resolveBackendBaseUrl() {
     return `http://${hostname}:${BACKEND_PORT}`;
   }
 
-  // If running on Mobile (iOS / Android), extract host from the bundle URL
+  // 1. Try Expo Go manifest hostUri (most reliable on physical phone)
   try {
-    const scriptURL = NativeModules?.SourceCode?.scriptURL;
-    if (scriptURL && typeof scriptURL === 'string') {
-      const parts = scriptURL.split('://');
-      if (parts.length > 1) {
-        const hostWithPort = parts[1].split('/')[0];
-        const host = hostWithPort.split(':')[0];
-        if (host && host !== 'localhost' && host !== '127.0.0.1' && host !== '10.0.2.2') {
-          return `http://${host}:${BACKEND_PORT}`;
-        }
-      }
+    const host =
+      extractHost(Constants.expoConfig?.hostUri) ||
+      extractHost(Constants.manifest2?.extra?.expoGo?.debuggerHost) ||
+      extractHost(Constants.manifest?.debuggerHost) ||
+      extractHost(Constants.experienceUrl) ||
+      extractHost(Constants.linkingUri);
+
+    if (host) {
+      console.log(`[API Client] Auto-detected backend host from Expo: http://${host}:${BACKEND_PORT}`);
+      return `http://${host}:${BACKEND_PORT}`;
     }
   } catch (err) {
     // ignore
   }
 
-  // Fallback for physical phone on Wi-Fi: use computer's LAN IP
+  // 2. Try NativeModules SourceCode bundle URL
+  try {
+    const scriptURL = NativeModules?.SourceCode?.scriptURL;
+    const host = extractHost(scriptURL);
+    if (host) {
+      console.log(`[API Client] Auto-detected backend host from bundle scriptURL: http://${host}:${BACKEND_PORT}`);
+      return `http://${host}:${BACKEND_PORT}`;
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  // 3. Fallback for physical phone on Wi-Fi: use computer's LAN IP
+  console.log(`[API Client] Using fallback LAN IP: http://${LOCAL_PC_IP}:${BACKEND_PORT}`);
   return `http://${LOCAL_PC_IP}:${BACKEND_PORT}`;
 }
 
@@ -47,17 +75,56 @@ export function setApiBaseUrl(url) {
 }
 
 export function getApiBaseUrl() {
+  if (!currentBaseUrl || currentBaseUrl.includes('10.133.68.219')) {
+    currentBaseUrl = resolveBackendBaseUrl();
+  }
   return currentBaseUrl;
 }
 
 export function getPinQrCodeUrl(pin) {
   const clean = (pin || 'WB-09-45896524').trim().toUpperCase();
-  return `${currentBaseUrl}/api/pins/qr/${encodeURIComponent(clean)}?format=png`;
+  return `${getApiBaseUrl()}/api/pins/qr/${encodeURIComponent(clean)}?format=png`;
 }
 
 export function getPinLocationUrl(pin) {
   const clean = (pin || 'WB-09-45896524').trim().toUpperCase();
-  return `${currentBaseUrl}/location?pin=${encodeURIComponent(clean)}`;
+  return `${getApiBaseUrl()}/location?pin=${encodeURIComponent(clean)}`;
+}
+
+/**
+ * Resilient fetch helper:
+ * Tries current resolved base URL. If it fails with network error,
+ * attempts fallback LAN IP (http://192.168.1.6:5000).
+ */
+async function apiFetch(endpoint, options = {}, timeoutMs = 8000) {
+  const base = getApiBaseUrl();
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const fullUrl = `${base}${path}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(fullUrl, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return res;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    const fallbackBase = `http://${LOCAL_PC_IP}:${BACKEND_PORT}`;
+    if (base !== fallbackBase) {
+      console.warn(`[API Client] Call to ${fullUrl} failed (${err.message}). Retrying fallback: ${fallbackBase}${path}`);
+      try {
+        const fallbackRes = await fetch(`${fallbackBase}${path}`, options);
+        currentBaseUrl = fallbackBase;
+        return fallbackRes;
+      } catch (fallbackErr) {
+        throw new Error(`Failed to reach backend at ${base} or ${fallbackBase}`);
+      }
+    }
+    throw err;
+  }
 }
 
 /**
@@ -65,21 +132,16 @@ export function getPinLocationUrl(pin) {
  */
 export async function sendOtp(phone) {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(`${currentBaseUrl}/api/auth/send-otp`, {
+    const res = await apiFetch('/api/auth/send-otp', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ phone }),
-      signal: controller.signal,
     });
-    clearTimeout(timeoutId);
     return await res.json();
   } catch (error) {
     return {
       success: false,
-      message: `Failed to connect to backend at ${currentBaseUrl} (${error.message || 'Network error'})`,
+      message: `Failed to connect to backend at ${getApiBaseUrl()} (${error.message || 'Network error'})`,
     };
   }
 }
@@ -89,21 +151,16 @@ export async function sendOtp(phone) {
  */
 export async function verifyOtp(phone, otp) {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(`${currentBaseUrl}/api/auth/verify-otp`, {
+    const res = await apiFetch('/api/auth/verify-otp', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ phone, otp }),
-      signal: controller.signal,
     });
-    clearTimeout(timeoutId);
     return await res.json();
   } catch (error) {
     return {
       success: false,
-      message: `Failed to connect to backend at ${currentBaseUrl} (${error.message || 'Network error'})`,
+      message: `Failed to connect to backend at ${getApiBaseUrl()} (${error.message || 'Network error'})`,
     };
   }
 }
@@ -112,12 +169,13 @@ export async function verifyOtp(phone, otp) {
  * Upload Image to server (selfie or property photo)
  */
 export async function uploadImageToServer(imageUri, type = 'property', base64 = null) {
+  const base = getApiBaseUrl();
   try {
     // 1. Try base64 upload if available
     if (base64) {
-      const res = await fetch(`${currentBaseUrl}/api/upload`, {
+      const res = await apiFetch('/api/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           image: `data:image/jpeg;base64,${base64}`,
           type,
@@ -125,7 +183,7 @@ export async function uploadImageToServer(imageUri, type = 'property', base64 = 
       });
       const data = await res.json();
       if (data.success && data.url) {
-        return `${currentBaseUrl}${data.url}`;
+        return `${base}${data.url}`;
       }
     }
 
@@ -139,14 +197,14 @@ export async function uploadImageToServer(imageUri, type = 'property', base64 = 
       type: 'image/jpeg',
     });
 
-    const res = await fetch(`${currentBaseUrl}/api/upload`, {
+    const res = await apiFetch('/api/upload', {
       method: 'POST',
-      headers: { 'Accept': 'application/json' },
+      headers: { Accept: 'application/json' },
       body: formData,
     });
     const data = await res.json();
     if (data.success && data.url) {
-      return `${currentBaseUrl}${data.url}`;
+      return `${base}${data.url}`;
     }
 
     // Fallback to local URI
@@ -162,21 +220,16 @@ export async function uploadImageToServer(imageUri, type = 'property', base64 = 
  */
 export async function submitRegistration(registrationData) {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-    const res = await fetch(`${currentBaseUrl}/api/registrations`, {
+    const res = await apiFetch('/api/registrations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(registrationData),
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    }, 12000);
     return await res.json();
   } catch (error) {
     return {
       success: false,
-      message: `Failed to connect to backend at ${currentBaseUrl} (${error.message || 'Network error'})`,
+      message: `Failed to connect to backend at ${getApiBaseUrl()} (${error.message || 'Network error'})`,
     };
   }
 }
@@ -186,18 +239,12 @@ export async function submitRegistration(registrationData) {
  */
 export async function getMyRegistration(phone) {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(`${currentBaseUrl}/api/registrations/my-status/${encodeURIComponent(phone)}`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const res = await apiFetch(`/api/registrations/my-status/${encodeURIComponent(phone)}`);
     return await res.json();
   } catch (error) {
     return {
       success: false,
-      message: `Failed to connect to backend at ${currentBaseUrl} (${error.message || 'Network error'})`,
+      message: `Failed to connect to backend at ${getApiBaseUrl()} (${error.message || 'Network error'})`,
     };
   }
 }
@@ -207,16 +254,11 @@ export async function getMyRegistration(phone) {
  */
 export async function updateProfileOnServer(updateData) {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(`${currentBaseUrl}/api/registrations/update-profile`, {
+    const res = await apiFetch('/api/registrations/update-profile', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(updateData),
-      signal: controller.signal,
     });
-    clearTimeout(timeoutId);
     return await res.json();
   } catch (error) {
     return {
@@ -230,35 +272,30 @@ export async function updateProfileOnServer(updateData) {
  * Quick Health Check
  */
 export async function checkBackendHealth() {
+  const base = getApiBaseUrl();
   try {
     const startTime = Date.now();
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetch(`${currentBaseUrl}/api/health`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const response = await apiFetch('/api/health', {}, 5000);
     const latency = Date.now() - startTime;
     const data = await response.json();
-    return { ok: response.ok, latency, data, url: currentBaseUrl };
+    return { ok: response.ok, latency, data, url: base };
   } catch (error) {
-    return { ok: false, error: error.message, url: currentBaseUrl };
+    return { ok: false, error: error.message, url: base };
   }
 }
 
 /**
- * Search PIN or Location Profile
+ * Search PIN, Resident Profiles, and Categorized Addresses (House, Flat, Own, Rent, Commercial)
+ * Supports type scope: 'user' | 'business' | 'all'
  */
-export async function searchPin(query) {
+export async function searchPin(query = '', category = '', type = 'all') {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(`${currentBaseUrl}/api/pins/search?q=${encodeURIComponent(query)}`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const qParam = query ? `q=${encodeURIComponent(query)}` : '';
+    const catParam = category && category !== 'all' ? `category=${encodeURIComponent(category)}` : '';
+    const typeParam = type && type !== 'all' ? `type=${encodeURIComponent(type)}` : '';
+    const queryString = [qParam, catParam, typeParam].filter(Boolean).join('&');
+    const path = `/api/pins/search${queryString ? '?' + queryString : ''}`;
+    const res = await apiFetch(path);
     return await res.json();
   } catch (error) {
     return {
@@ -273,13 +310,7 @@ export async function searchPin(query) {
  */
 export async function getDailyNews() {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(`${currentBaseUrl}/api/content/news`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const res = await apiFetch('/api/content/news');
     return await res.json();
   } catch (error) {
     return { success: false, news: [], message: error.message };
@@ -291,13 +322,7 @@ export async function getDailyNews() {
  */
 export async function getAdsAndSettings() {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(`${currentBaseUrl}/api/content/ads`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const res = await apiFetch('/api/content/ads');
     return await res.json();
   } catch (error) {
     return { success: false, ads: [], settings: { adMode: 'manual' }, message: error.message };
@@ -305,17 +330,12 @@ export async function getAdsAndSettings() {
 }
 
 /**
- * Get Notifications & Shop Ads
+ * Get Notifications (supports user phone filtering)
  */
-export async function getNotifications() {
+export async function getNotifications(phone = null) {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(`${currentBaseUrl}/api/content/notifications`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const query = phone ? `?phone=${encodeURIComponent(phone)}` : '';
+    const res = await apiFetch(`/api/content/notifications${query}`);
     return await res.json();
   } catch (error) {
     return { success: false, notifications: [], unreadCount: 0, message: error.message };
@@ -327,16 +347,125 @@ export async function getNotifications() {
  */
 export async function getNearbyBusinesses() {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(`${currentBaseUrl}/api/content/nearby`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const res = await apiFetch('/api/content/nearby');
     return await res.json();
   } catch (error) {
     return { success: false, businesses: [], message: error.message };
   }
 }
+
+/**
+ * Get App Launch / Special Offer Popup Config
+ */
+export async function getAppLaunchPopup() {
+  try {
+    const res = await apiFetch('/api/content/popup', {}, 6000);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      popup: {
+        enabled: false,
+        title: '',
+        message: '',
+        imageUrl: '',
+        buttonText: '',
+        action: 'none',
+      },
+    };
+  }
+}
+
+/**
+ * Password Login (supports role 'user' or 'business')
+ */
+export async function loginWithPassword(phone, password, role = 'user') {
+  try {
+    const res = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ phone, password, role }),
+    });
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to connect to backend (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
+ * Register Account with Phone, OTP, and Password
+ */
+export async function registerAccountWithPassword({ phone, otp, password, role = 'user', fullName, shopName }) {
+  try {
+    const res = await apiFetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ phone, otp, password, role, fullName, shopName }),
+    });
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to connect to backend (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
+ * Submit Business Registration (Shop details + GSTIN / PAN / Udyam)
+ */
+export async function registerBusinessAccount(businessData) {
+  try {
+    const res = await apiFetch('/api/business/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(businessData),
+    }, 12000);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to submit business registration (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
+ * Get Business Registration Status
+ */
+export async function getMyBusiness(phone) {
+  try {
+    const res = await apiFetch(`/api/business/my-status/${encodeURIComponent(phone)}`);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to fetch business status (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
+ * Decode QR Code (from live scan text or picked image)
+ */
+export async function decodeQrCode(text, imageBase64 = null) {
+  try {
+    const res = await apiFetch('/api/pins/decode-qr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ text, imageBase64 }),
+    }, 10000);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to decode QR code (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+
 

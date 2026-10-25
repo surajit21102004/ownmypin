@@ -419,6 +419,235 @@ async function deleteNearbyBusiness(req, res, next) {
   }
 }
 
+/**
+ * Admin: List all business applications
+ */
+async function getBusinesses(req, res, next) {
+  try {
+    const { status } = req.query;
+    let query = 'SELECT * FROM business_registrations';
+    const params = [];
+    if (status && status !== 'all') {
+      query += ' WHERE status = ?';
+      params.push(status);
+    }
+    query += ' ORDER BY id DESC';
+
+    const [rows] = await pool.query(query, params);
+
+    const parsed = rows.map((r) => {
+      if (typeof r.shop_images === 'string') {
+        try {
+          r.shop_images = JSON.parse(r.shop_images);
+        } catch (e) {
+          r.shop_images = [];
+        }
+      }
+      return r;
+    });
+
+    return res.status(200).json({
+      success: true,
+      businesses: parsed,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Approve Business application
+ */
+async function approveBusiness(req, res, next) {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query('SELECT * FROM business_registrations WHERE id = ? LIMIT 1', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Business not found' });
+    }
+
+    const biz = rows[0];
+    const { pinCode } = await generateUniquePin(biz.state_code || 'WB', biz.district_code || '09', pool);
+
+    await pool.query(
+      "UPDATE business_registrations SET status = 'approved', pin_code = ?, updated_at = NOW() WHERE id = ?",
+      [pinCode, id]
+    );
+
+    // Also insert into nearby_businesses so it appears in the app
+    await pool.query(
+      `INSERT INTO nearby_businesses (name, category, distance, address, rating, pin_code, latitude, longitude, image_url, is_verified)
+       VALUES (?, ?, '0.3 km', ?, 4.9, ?, ?, ?, ?, TRUE)`,
+      [
+        biz.shop_name,
+        biz.category || 'Retail & Shopping',
+        biz.address_line || `${biz.city || 'Rishra'}, ${biz.district || 'Hooghly'}`,
+        pinCode,
+        biz.latitude || 22.7126,
+        biz.longitude || 88.3524,
+        biz.shop_logo_url || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=60',
+      ]
+    );
+
+    // Real notification to user
+    await pool.query(
+      `INSERT INTO app_notifications (user_phone, title, message, type, target_pin, action_type)
+       VALUES (?, ?, ?, 'business_alert', ?, 'profile')`,
+      [
+        biz.phone,
+        `🎉 Business Verified: ${biz.shop_name}`,
+        `Congratulations! Your verified business DIGIPIN is ${pinCode}. Your store is now listed on Nearby Verified Businesses.`,
+        pinCode,
+      ]
+    );
+
+    // Also broadcast to all users that a new business joined nearby
+    await pool.query(
+      `INSERT INTO app_notifications (user_phone, title, message, type, target_pin, action_type)
+       VALUES (NULL, ?, ?, 'business_alert', ?, 'nearby')`,
+      [
+        `New Business Nearby: ${biz.shop_name}`,
+        `${biz.shop_name} has registered their verified business pin in ${biz.city || 'your area'}. Tap to explore.`,
+        pinCode,
+      ]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Business approved and verified PIN generated successfully!',
+      pinCode,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Reject Business application
+ */
+async function rejectBusiness(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const [rows] = await pool.query('SELECT * FROM business_registrations WHERE id = ? LIMIT 1', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Business not found' });
+    }
+
+    await pool.query(
+      "UPDATE business_registrations SET status = 'rejected', rejection_reason = ?, updated_at = NOW() WHERE id = ?",
+      [reason || 'Business verification documents could not be validated.', id]
+    );
+
+    await pool.query(
+      `INSERT INTO app_notifications (user_phone, title, message, type, action_type)
+       VALUES (?, ?, ?, 'business_alert', 'profile')`,
+      [
+        rows[0].phone,
+        `Business Verification Notice: ${rows[0].shop_name}`,
+        `Your business documents could not be validated. Reason: ${reason || 'Details could not be verified'}. Please re-upload.`,
+      ]
+    );
+
+    return res.status(200).json({ success: true, message: 'Business application rejected' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Get App Start Popup Settings
+ */
+async function getPopupSettings(req, res, next) {
+  try {
+    const [rows] = await pool.query("SELECT setting_key, setting_value FROM app_settings WHERE setting_key LIKE 'popup_%'");
+    const popup = {};
+    rows.forEach((r) => {
+      popup[r.setting_key] = r.setting_value;
+    });
+    return res.status(200).json({ success: true, popup });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Update App Start Popup Settings
+ */
+async function updatePopupSettings(req, res, next) {
+  try {
+    const { enabled, title, message, imageUrl, buttonText, action, actionUrl } = req.body;
+
+    const items = [
+      { key: 'popup_enabled', val: String(enabled !== false && enabled !== 'false') },
+      { key: 'popup_title', val: title || 'Special Offer: Refer & Earn!' },
+      { key: 'popup_message', val: message || '' },
+      { key: 'popup_image_url', val: imageUrl || '' },
+      { key: 'popup_button_text', val: buttonText || 'Explore' },
+      { key: 'popup_action', val: action || 'refer' },
+      { key: 'popup_action_url', val: actionUrl || '' },
+    ];
+
+    for (const item of items) {
+      await pool.query(
+        'INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
+        [item.key, item.val, item.val]
+      );
+    }
+
+    return res.status(200).json({ success: true, message: 'App launch popup settings updated!' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Send Broadcast Notification
+ */
+async function sendBroadcastNotification(req, res, next) {
+  try {
+    const { title, message, type, action_type, action_url, target_phone } = req.body;
+    if (!title || !message) {
+      return res.status(400).json({ success: false, message: 'Title and message are required' });
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO app_notifications (user_phone, title, message, type, action_type, action_url)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        target_phone ? target_phone.trim() : null,
+        title.trim(),
+        message.trim(),
+        type || 'admin_broadcast',
+        action_type || 'profile',
+        action_url || null,
+      ]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Notification sent successfully!',
+      id: result.insertId,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin: Delete Notification
+ */
+async function deleteNotification(req, res, next) {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM app_notifications WHERE id = ?', [id]);
+    return res.status(200).json({ success: true, message: 'Notification deleted' });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getRegistrations,
   getRegistrationById,
@@ -433,4 +662,11 @@ module.exports = {
   updateSettings,
   createNearbyBusiness,
   deleteNearbyBusiness,
+  getBusinesses,
+  approveBusiness,
+  rejectBusiness,
+  getPopupSettings,
+  updatePopupSettings,
+  sendBroadcastNotification,
+  deleteNotification,
 };

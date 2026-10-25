@@ -6,6 +6,7 @@ const adminRoutes = require('./admin.routes');
 const uploadRoutes = require('./upload.routes');
 const pinsRoutes = require('./pins.routes');
 const contentRoutes = require('./content.routes');
+const businessRoutes = require('./business.routes');
 
 const router = express.Router();
 
@@ -13,6 +14,7 @@ const router = express.Router();
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/registrations', registrationRoutes);
+router.use('/business', businessRoutes);
 router.use('/admin', adminRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/pins', pinsRoutes);

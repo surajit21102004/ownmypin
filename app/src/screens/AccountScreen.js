@@ -18,6 +18,17 @@ import BusinessModal from '../components/BusinessModal';
 import SubscriptionModal from '../components/SubscriptionModal';
 import InviteModal from '../components/InviteModal';
 import SocialProfilesModal from '../components/SocialProfilesModal';
+import {
+  AccountIcon,
+  StoreIcon,
+  ShareIcon,
+  GlobeIcon,
+  GiftIcon,
+  ShieldLockIcon,
+  ChevronRightIcon,
+  StarIcon,
+  VerifiedCheckIcon,
+} from '../components/SvgIcons';
 
 export default function AccountScreen({
   user,
@@ -116,7 +127,7 @@ export default function AccountScreen({
             <Text style={styles.fullName}>{fullName}</Text>
             {isApproved && (
               <View style={styles.greenTickCircle}>
-                <Text style={styles.greenTickText}>✓</Text>
+                <VerifiedCheckIcon size={10} color="#FFFFFF" />
               </View>
             )}
           </View>
@@ -133,7 +144,7 @@ export default function AccountScreen({
             </TouchableOpacity>
 
             <View style={styles.ratingBadge}>
-              <Text style={styles.starIcon}>★</Text>
+              <StarIcon size={12} color="#D97706" />
               <Text style={styles.ratingText}>
                 {isApproved ? '4.8 · 24 ratings' : isPending ? 'Pending Review' : 'New User'}
               </Text>
@@ -258,8 +269,13 @@ export default function AccountScreen({
           activeOpacity={0.7}
           onPress={() => setShowEditProfile(true)}
         >
-          <Text style={styles.menuItemText}>Profile edit</Text>
-          <Text style={styles.chevron}>›</Text>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuIconWrap}>
+              <AccountIcon size={17} color="#0F172A" />
+            </View>
+            <Text style={styles.menuItemText}>Profile edit</Text>
+          </View>
+          <ChevronRightIcon size={16} color="#94A3B8" />
         </TouchableOpacity>
 
         {/* Create a business */}
@@ -268,8 +284,13 @@ export default function AccountScreen({
           activeOpacity={0.7}
           onPress={() => setShowBusiness(true)}
         >
-          <Text style={styles.menuItemText}>Create a business</Text>
-          <Text style={styles.chevron}>›</Text>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuIconWrap}>
+              <StoreIcon size={17} color="#0F172A" />
+            </View>
+            <Text style={styles.menuItemText}>Create a business</Text>
+          </View>
+          <ChevronRightIcon size={16} color="#94A3B8" />
         </TouchableOpacity>
 
         {/* Add social media profiles */}
@@ -278,8 +299,13 @@ export default function AccountScreen({
           activeOpacity={0.7}
           onPress={() => setShowSocial(true)}
         >
-          <Text style={styles.menuItemText}>Add social media profiles</Text>
-          <Text style={styles.chevron}>›</Text>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuIconWrap}>
+              <ShareIcon size={16} color="#0F172A" />
+            </View>
+            <Text style={styles.menuItemText}>Add social media profiles</Text>
+          </View>
+          <ChevronRightIcon size={16} color="#94A3B8" />
         </TouchableOpacity>
 
         {/* App language */}
@@ -288,8 +314,13 @@ export default function AccountScreen({
           activeOpacity={0.7}
           onPress={() => setShowLangModal(true)}
         >
-          <Text style={styles.menuItemText}>App language</Text>
-          <Text style={styles.chevron}>›</Text>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuIconWrap}>
+              <GlobeIcon size={17} color="#0F172A" />
+            </View>
+            <Text style={styles.menuItemText}>App language</Text>
+          </View>
+          <ChevronRightIcon size={16} color="#94A3B8" />
         </TouchableOpacity>
 
         {/* Invite & Earn */}
@@ -298,12 +329,17 @@ export default function AccountScreen({
           activeOpacity={0.7}
           onPress={() => setShowInvite(true)}
         >
-          <Text style={styles.menuItemText}>Invite & Earn</Text>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuIconWrap}>
+              <GiftIcon size={17} color="#0F172A" />
+            </View>
+            <Text style={styles.menuItemText}>Invite & Earn</Text>
+          </View>
           <View style={styles.menuRightBadgeWrap}>
             <View style={styles.vipRewardBadge}>
               <Text style={styles.vipRewardBadgeText}>3 months VIP</Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <ChevronRightIcon size={16} color="#94A3B8" />
           </View>
         </TouchableOpacity>
 
@@ -313,8 +349,13 @@ export default function AccountScreen({
           activeOpacity={0.7}
           onPress={() => setShowPrivacyModal(true)}
         >
-          <Text style={styles.menuItemText}>Privacy policy</Text>
-          <Text style={styles.chevron}>›</Text>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuIconWrap}>
+              <ShieldLockIcon size={17} color="#0F172A" />
+            </View>
+            <Text style={styles.menuItemText}>Privacy policy</Text>
+          </View>
+          <ChevronRightIcon size={16} color="#94A3B8" />
         </TouchableOpacity>
       </View>
 
@@ -766,12 +807,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 18,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   menuItemText: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '700',
     color: '#0F172A',
   },

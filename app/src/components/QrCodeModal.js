@@ -39,8 +39,17 @@ export default function QrCodeModal({
 
   const handleShare = async () => {
     try {
+      const shareMessage =
+        `📍 Verified ownMyPin Digital Address\n` +
+        `Name: ${name}\n` +
+        `DIGIPIN: ${pin}\n\n` +
+        `🧭 Open Doorstep Map & Navigation:\n${locationUrl}\n\n` +
+        `📷 Scannable QR Code Image:\n${primaryQrUrl}`;
+
       await Share.share({
-        message: `My verified OwnMyPin DIGIPIN is: ${pin}\nName: ${name}\nOpen Doorstep Location & Map: ${locationUrl}`,
+        title: `ownMyPin Digital Address (${pin})`,
+        message: shareMessage,
+        url: Platform.OS === 'ios' ? primaryQrUrl : undefined,
       });
     } catch (e) {
       // ignore

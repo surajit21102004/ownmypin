@@ -12,9 +12,24 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import { getAdsAndSettings, getDailyNews, getPinQrCodeUrl } from '../services/api';
+import { getAdsAndSettings, getDailyNews, getPinQrCodeUrl, getAppLaunchPopup } from '../services/api';
 import NearbyBusinessesModal from '../components/NearbyBusinessesModal';
 import InviteModal from '../components/InviteModal';
+import AppLaunchOfferModal from '../components/AppLaunchOfferModal';
+import {
+  BellIcon,
+  SearchIcon,
+  ScannerIcon,
+  MapPinIcon,
+  GiftIcon,
+  ShareIcon,
+  CopyIcon,
+  StoreIcon,
+  VerifiedCheckIcon,
+} from '../components/SvgIcons';
+
+// Session-level flag: only show the launch popup ONCE per app open/session
+let hasShownAppLaunchPopupInSession = false;
 
 export default function HomeScreen({
   user,
@@ -33,6 +48,8 @@ export default function HomeScreen({
   const [copiedToast, setCopiedToast] = useState(false);
   const [showNearby, setShowNearby] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [showLaunchPopup, setShowLaunchPopup] = useState(false);
+  const [popupData, setPopupData] = useState(null);
 
   // Ads List from Admin Panel
   const [adsList, setAdsList] = useState([
@@ -125,9 +142,10 @@ export default function HomeScreen({
 
   const loadContent = async () => {
     try {
-      const [adsRes, newsRes] = await Promise.all([
+      const [adsRes, newsRes, popupRes] = await Promise.all([
         getAdsAndSettings(),
         getDailyNews(),
+        getAppLaunchPopup(),
       ]);
 
       if (adsRes && adsRes.ads && adsRes.ads.length > 0) {
@@ -136,8 +154,29 @@ export default function HomeScreen({
       if (newsRes && newsRes.news && newsRes.news.length > 0) {
         setNewsList(newsRes.news);
       }
+      if (popupRes && popupRes.success && popupRes.popup && popupRes.popup.enabled) {
+        setPopupData(popupRes.popup);
+        if (!hasShownAppLaunchPopupInSession) {
+          setShowLaunchPopup(true);
+          hasShownAppLaunchPopupInSession = true;
+        }
+      }
     } catch (e) {
       // keep fallback
+    }
+  };
+
+  const handlePopupRedirect = (action) => {
+    if (action === 'refer') {
+      setShowInvite(true);
+    } else if (action === 'scanner') {
+      onNavigateToScanner();
+    } else if (action === 'register') {
+      onNavigateToRegister();
+    } else if (action === 'nearby') {
+      setShowNearby(true);
+    } else if (action === 'dsc') {
+      onNavigateToDsc();
     }
   };
 
@@ -210,8 +249,8 @@ export default function HomeScreen({
               activeOpacity={0.8}
               onPress={onOpenNotifications}
             >
-              <Text style={styles.bellIcon}>🔔</Text>
-              {unreadCount > 0 && <View style={styles.yellowDotBadge} />}
+              <BellIcon size={21} color="#0F172A" />
+              {unreadCount > 0 && <View style={styles.redDotBadge} />}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -234,7 +273,7 @@ export default function HomeScreen({
           <View style={styles.nameRow}>
             <Text style={styles.nameText}>{fullName}</Text>
             <View style={styles.greenVerifiedCircle}>
-              <Text style={styles.greenVerifiedCheck}>✓</Text>
+              <VerifiedCheckIcon size={11} color="#FFFFFF" />
             </View>
           </View>
         </View>
@@ -300,7 +339,8 @@ export default function HomeScreen({
                   activeOpacity={0.85}
                   onPress={handleShareQr}
                 >
-                  <Text style={styles.shareQrBtnText}>Share QR code</Text>
+                  <ShareIcon size={14} color="#0F172A" />
+                  <Text style={styles.shareQrBtnText}>Share QR</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -308,6 +348,7 @@ export default function HomeScreen({
                   activeOpacity={0.85}
                   onPress={handleCopyPin}
                 >
+                  <CopyIcon size={14} color="#FFFFFF" />
                   <Text style={styles.copyPinBtnText}>
                     {copiedToast ? 'Copied!' : 'Copy PIN'}
                   </Text>
@@ -362,7 +403,7 @@ export default function HomeScreen({
             onPress={onNavigateToSearch}
           >
             <View style={styles.quickActionIconWrap}>
-              <Text style={styles.quickActionIcon}>🔍</Text>
+              <SearchIcon size={20} color="#0F172A" />
             </View>
             <Text style={styles.quickActionLabel}>Search PIN</Text>
           </TouchableOpacity>
@@ -374,7 +415,7 @@ export default function HomeScreen({
             onPress={onNavigateToScanner}
           >
             <View style={styles.quickActionIconWrap}>
-              <Text style={styles.quickActionIcon}>⛶</Text>
+              <ScannerIcon size={20} color="#0F172A" />
             </View>
             <Text style={styles.quickActionLabel}>Scan QR</Text>
           </TouchableOpacity>
@@ -386,7 +427,7 @@ export default function HomeScreen({
             onPress={() => setShowNearby(true)}
           >
             <View style={styles.quickActionIconWrap}>
-              <Text style={styles.quickActionIcon}>📍</Text>
+              <MapPinIcon size={20} color="#0F172A" />
             </View>
             <Text style={styles.quickActionLabel}>Nearby</Text>
           </TouchableOpacity>
@@ -398,7 +439,7 @@ export default function HomeScreen({
             onPress={() => setShowInvite(true)}
           >
             <View style={styles.quickActionIconWrap}>
-              <Text style={styles.quickActionIcon}>🎁</Text>
+              <GiftIcon size={20} color="#0F172A" />
             </View>
             <Text style={styles.quickActionLabel}>Invite</Text>
           </TouchableOpacity>
@@ -573,6 +614,14 @@ export default function HomeScreen({
         onClose={() => setShowInvite(false)}
         pin={pin || 'WB-09-45896524'}
       />
+
+      {/* App Launch Special Offer Popup (controlled by Admin Panel) */}
+      <AppLaunchOfferModal
+        visible={showLaunchPopup}
+        popupData={popupData}
+        onClose={() => setShowLaunchPopup(false)}
+        onActionRedirect={handlePopupRedirect}
+      />
     </View>
   );
 }
@@ -619,17 +668,14 @@ const styles = StyleSheet.create({
     elevation: 2,
     position: 'relative',
   },
-  bellIcon: {
-    fontSize: 20,
-  },
-  yellowDotBadge: {
+  redDotBadge: {
     position: 'absolute',
     top: 9,
     right: 10,
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#EF4444',
     borderWidth: 1.5,
     borderColor: '#FFFFFF',
   },
@@ -740,6 +786,8 @@ const styles = StyleSheet.create({
   },
   shareQrBtn: {
     flex: 1,
+    flexDirection: 'row',
+    gap: 6,
     backgroundColor: '#F59E0B',
     borderRadius: 22,
     paddingVertical: 12,
@@ -753,6 +801,8 @@ const styles = StyleSheet.create({
   },
   copyPinBtn: {
     flex: 1,
+    flexDirection: 'row',
+    gap: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.22)',
@@ -847,8 +897,13 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     textDecorationLine: 'underline',
   },
+  todayHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   carouselContent: {
-    gap: 12,
+    flexDirection: 'row',
   },
   todayCard: {
     backgroundColor: '#FFFFFF',
