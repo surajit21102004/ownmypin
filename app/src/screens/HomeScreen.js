@@ -28,6 +28,8 @@ import {
   VerifiedCheckIcon,
 } from '../components/SvgIcons';
 
+const DIGILOCKER_LOGO = require('../../assets/digilocker.png');
+
 // Session-level flag: only show the launch popup ONCE per app open/session
 let hasShownAppLaunchPopupInSession = false;
 
@@ -184,6 +186,7 @@ export default function HomeScreen({
   const isRegistered = !!registration;
   const isApproved = registration && registration.status === 'approved';
   const isPending = registration && registration.status === 'pending';
+  const isDigilockerVerified = Boolean(registration?.is_aadhaar_verified || user?.is_aadhaar_verified);
 
   const pin =
     (registration && (registration.pin_code || registration.verified_pin_code)) ||
@@ -275,17 +278,29 @@ export default function HomeScreen({
             <View style={styles.greenVerifiedCircle}>
               <VerifiedCheckIcon size={11} color="#FFFFFF" />
             </View>
+            {isDigilockerVerified && (
+              <View style={styles.dlHomeBadge}>
+                <Image source={DIGILOCKER_LOGO} style={{ width: 13, height: 13, marginRight: 3 }} resizeMode="contain" />
+                <Text style={styles.dlHomeBadgeText}>DigiLocker</Text>
+              </View>
+            )}
           </View>
         </View>
-
         {/* ----------------------------------------------------------- */}
         {/* YOUR OWNMYPIN CARD (Matches Screenshot 1)                   */}
         {/* ----------------------------------------------------------- */}
         <View style={styles.ownmypinCard}>
           <View style={styles.cardMainRow}>
             <View style={styles.cardLeftCol}>
-              <Text style={styles.cardHeaderLabel}>YOUR OWNMYPIN</Text>
-
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <Text style={styles.cardHeaderLabel}>YOUR OWNMYPIN</Text>
+                {isDigilockerVerified && (
+                  <View style={styles.dlCardPill}>
+                    <Image source={DIGILOCKER_LOGO} style={{ width: 12, height: 12, marginRight: 3 }} resizeMode="contain" />
+                    <Text style={styles.dlCardPillText}>Verified by DigiLocker</Text>
+                  </View>
+                )}
+              </View>
               {isApproved || (!registration && pin) ? (
                 <>
                   <Text style={styles.cardPinText}>{pin || 'WB-09-45896524'}</Text>
@@ -1077,5 +1092,36 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#94A3B8',
     fontWeight: '500',
+  },
+  dlHomeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 6,
+  },
+  dlHomeBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#3730A3',
+  },
+  dlCardPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  dlCardPillText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });

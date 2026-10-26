@@ -25,6 +25,8 @@ import {
   ShieldLockIcon,
 } from './SvgIcons';
 
+const DIGILOCKER_LOGO = require('../../assets/digilocker.png');
+
 export default function ProfileDetailsModal({
   visible,
   onClose,
@@ -36,6 +38,11 @@ export default function ProfileDetailsModal({
 
   if (!profile) return null;
 
+  const isDigilockerVerified = Boolean(
+    profile.isDigilockerVerified ||
+    profile.is_aadhaar_verified ||
+    profile.isAadhaarVerified
+  );
   const isPrivacyLocked = (profile.privacy_mode || profile.privacyMode) && !profile.isDirectShare && !isDirectShare;
   const social = profile.social_profiles || profile.socialProfiles || null;
   const hasSocial = social && (social.whatsapp || social.instagram || social.facebook || social.website);
@@ -119,7 +126,15 @@ export default function ProfileDetailsModal({
               </View>
 
               <View style={styles.profileMeta}>
-                <Text style={styles.profileName}>{profile.fullName}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                  <Text style={styles.profileName}>{profile.fullName}</Text>
+                  {isDigilockerVerified && (
+                    <View style={styles.dlModalBadge}>
+                      <Image source={DIGILOCKER_LOGO} style={{ width: 13, height: 13, marginRight: 3 }} resizeMode="contain" />
+                      <Text style={styles.dlModalBadgeText}>DigiLocker</Text>
+                    </View>
+                  )}
+                </View>
                 <View style={styles.pinPill}>
                   <Text style={styles.pinText}>{profile.pin}</Text>
                 </View>
@@ -172,6 +187,24 @@ export default function ProfileDetailsModal({
                 </View>
               </View>
             </View>
+
+            {/* DigiLocker Official Verification Trust Banner */}
+            {isDigilockerVerified && (
+              <View style={styles.digilockerTrustBanner}>
+                <Image source={DIGILOCKER_LOGO} style={{ width: 32, height: 32, marginRight: 12 }} resizeMode="contain" />
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                    <Text style={styles.digilockerTrustTitle}>Verified by DigiLocker</Text>
+                    <View style={styles.dlTickPill}>
+                      <Text style={styles.dlTickText}>✓ 100% Certified</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.digilockerTrustSub}>
+                    Government of India Aadhaar Authenticated {profile.aadhaarVerifiedName ? `• ${profile.aadhaarVerifiedName}` : ''}
+                  </Text>
+                </View>
+              </View>
+            )}
 
             {/* Privacy Mode Notice (if locked) */}
             {isPrivacyLocked && (
@@ -832,5 +865,58 @@ const styles = StyleSheet.create({
   startupBadgeLogo: {
     height: 24,
     width: 95,
+  },
+  dlModalBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  dlModalBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#3730A3',
+  },
+  digilockerTrustBanner: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#C7D2FE',
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  digilockerTrustTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#1E1B4B',
+  },
+  digilockerTrustSub: {
+    fontSize: 11,
+    color: '#4338CA',
+    lineHeight: 15,
+  },
+  dlTickPill: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  dlTickText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#065F46',
   },
 });

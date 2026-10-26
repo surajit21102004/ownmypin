@@ -7,6 +7,7 @@ const uploadRoutes = require('./upload.routes');
 const pinsRoutes = require('./pins.routes');
 const contentRoutes = require('./content.routes');
 const businessRoutes = require('./business.routes');
+const digilockerRoutes = require('./digilocker.routes');
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ router.use('/admin', adminRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/pins', pinsRoutes);
 router.use('/content', contentRoutes);
+router.use('/digilocker', digilockerRoutes);
 
 // Base API route info
 router.get('/', (req, res) => {

@@ -16,6 +16,8 @@ import {
 import { COLORS } from '../constants/theme';
 import { TRANSLATIONS } from '../constants/translations';
 import { searchPin } from '../services/api';
+
+const DIGILOCKER_LOGO = require('../../assets/digilocker.png');
 import {
   SearchIcon,
   CloseIcon,
@@ -358,9 +360,14 @@ export default function SearchScreen({
                     {/* Meta Col: Name + Tags + PIN */}
                     <View style={styles.cardMetaCol}>
                       <View style={styles.nameAndPinRow}>
-                        <Text style={styles.residentName} numberOfLines={1}>
-                          {item.fullName}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                          <Text style={styles.residentName} numberOfLines={1}>
+                            {item.fullName}
+                          </Text>
+                          {item.isDigilockerVerified && (
+                            <Image source={DIGILOCKER_LOGO} style={{ width: 14, height: 14 }} resizeMode="contain" />
+                          )}
+                        </View>
                         <View style={styles.pinTagPill}>
                           <Text style={styles.pinTagText}>{item.pin}</Text>
                         </View>
@@ -368,6 +375,12 @@ export default function SearchScreen({
 
                       {/* Explicit Property & Status Tags with SVG Icons */}
                       <View style={styles.tagsRow}>
+                        {item.isDigilockerVerified && (
+                          <View style={styles.tagDigilocker}>
+                            <Image source={DIGILOCKER_LOGO} style={{ width: 11, height: 11, marginRight: 3 }} resizeMode="contain" />
+                            <Text style={styles.tagDigilockerText}>DigiLocker</Text>
+                          </View>
+                        )}
                         {isBiz ? (
                           <>
                             <View style={styles.tagBiz}>
@@ -1106,5 +1119,20 @@ const styles = StyleSheet.create({
   modalOptionSub: {
     fontSize: 11,
     color: '#64748B',
+  },
+  tagDigilocker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  tagDigilockerText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#3730A3',
   },
 });

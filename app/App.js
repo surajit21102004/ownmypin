@@ -30,6 +30,7 @@ export default function App() {
       ...prev,
       user: {
         ...(prev.user || {}),
+        ...updatedFields,
         full_name: updatedFields.full_name || prev.user?.full_name,
         phone: updatedFields.phone || prev.user?.phone,
       },

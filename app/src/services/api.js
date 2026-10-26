@@ -2,8 +2,9 @@ import { Platform, NativeModules } from 'react-native';
 import Constants from 'expo-constants';
 
 const BACKEND_PORT = 5000;
-// Your computer's current Wi-Fi LAN IP address
-export const LOCAL_PC_IP = '192.168.1.6';
+// Your computer's active Wi-Fi LAN IP address
+export const LOCAL_PC_IP = '192.168.0.102';
+export const LAN_FALLBACK_IPS = ['192.168.0.102', '10.0.0.254', '192.168.1.6'];
 
 /**
  * Extracts IPv4 address or hostname from an arbitrary URI/URL string
@@ -23,7 +24,7 @@ function extractHost(str) {
  * Automatically determine the backend URL:
  * 1. If running in Expo Go on a physical device, Metro bundle URL contains the computer's IP!
  * 2. If running on Web, uses current window location or localhost
- * 3. Fallbacks to the known local PC Wi-Fi IP (192.168.1.6)
+ * 3. Fallbacks to the active Wi-Fi IP (192.168.0.102)
  */
 function resolveBackendBaseUrl() {
   // If running in Web browser
@@ -75,7 +76,7 @@ export function setApiBaseUrl(url) {
 }
 
 export function getApiBaseUrl() {
-  if (!currentBaseUrl || currentBaseUrl.includes('10.133.68.219')) {
+  if (!currentBaseUrl || currentBaseUrl.includes('10.133.68.219') || currentBaseUrl.includes('192.168.1.6')) {
     currentBaseUrl = resolveBackendBaseUrl();
   }
   return currentBaseUrl;
@@ -94,7 +95,7 @@ export function getPinLocationUrl(pin) {
 /**
  * Resilient fetch helper:
  * Tries current resolved base URL. If it fails with network error,
- * attempts fallback LAN IP (http://192.168.1.6:5000).
+ * attempts fallback LAN IPs (http://192.168.0.102:5000, etc.).
  */
 async function apiFetch(endpoint, options = {}, timeoutMs = 8000) {
   const base = getApiBaseUrl();
@@ -112,18 +113,22 @@ async function apiFetch(endpoint, options = {}, timeoutMs = 8000) {
     return res;
   } catch (err) {
     clearTimeout(timeoutId);
-    const fallbackBase = `http://${LOCAL_PC_IP}:${BACKEND_PORT}`;
-    if (base !== fallbackBase) {
-      console.warn(`[API Client] Call to ${fullUrl} failed (${err.message}). Retrying fallback: ${fallbackBase}${path}`);
+    console.warn(`[API Client] Call to ${fullUrl} failed (${err.message}). Retrying fallback LAN addresses...`);
+
+    // Try fallback IPs
+    for (const ip of LAN_FALLBACK_IPS) {
+      const fallbackBase = `http://${ip}:${BACKEND_PORT}`;
+      if (fallbackBase === base) continue;
       try {
         const fallbackRes = await fetch(`${fallbackBase}${path}`, options);
         currentBaseUrl = fallbackBase;
+        console.log(`[API Client] Successfully recovered with: ${fallbackBase}`);
         return fallbackRes;
       } catch (fallbackErr) {
-        throw new Error(`Failed to reach backend at ${base} or ${fallbackBase}`);
+        // try next
       }
     }
-    throw err;
+    throw new Error(`Failed to reach backend at ${base} or any fallback LAN IP (${LAN_FALLBACK_IPS.join(', ')})`);
   }
 }
 
@@ -463,6 +468,78 @@ export async function decodeQrCode(text, imageBase64 = null) {
     return {
       success: false,
       message: `Failed to decode QR code (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
+ * Initiate DigiLocker Verification Session
+ */
+export async function initiateDigilockerVerification(phone, redirectUrl = null) {
+  try {
+    const res = await apiFetch('/api/digilocker/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ phone, redirectUrl }),
+    }, 12000);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to initiate DigiLocker session (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
+ * Exchange DigiLocker Auth Code and Code Verifier
+ */
+export async function callbackDigilockerVerification({ code, state, codeVerifier, recordId }) {
+  try {
+    const res = await apiFetch('/api/digilocker/callback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ code, state, codeVerifier, recordId }),
+    }, 12000);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to verify authorization code (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
+ * Complete DigiLocker Verification and Retrieve Verified Aadhaar Data
+ */
+export async function completeDigilockerVerification(recordId, phone = null) {
+  try {
+    const res = await apiFetch('/api/digilocker/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ recordId, phone }),
+    }, 15000);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to complete verification (${error.message || 'Network error'})`,
+    };
+  }
+}
+
+/**
+ * Fetch DigiLocker Status for a Phone
+ */
+export async function getDigilockerStatus(phone) {
+  try {
+    const res = await apiFetch(`/api/digilocker/status/${encodeURIComponent(phone)}`);
+    return await res.json();
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to check status (${error.message || 'Network error'})`,
     };
   }
 }

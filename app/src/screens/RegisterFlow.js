@@ -16,6 +16,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { WebView } from 'react-native-webview';
 import { submitRegistration, getMyRegistration, uploadImageToServer } from '../services/api';
+import DigiLockerModal from '../components/DigiLockerModal';
+
+const DIGILOCKER_LOGO = require('../../assets/digilocker.png');
 
 const { width } = Dimensions.get('window');
 
@@ -160,6 +163,7 @@ export default function RegisterFlow({
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [registration, setRegistration] = useState(initialRegistration);
+  const [showDigilockerModal, setShowDigilockerModal] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -459,6 +463,8 @@ export default function RegisterFlow({
       };
       setRegistration(newReg);
       setScreenMode('submitted');
+      // Prompt user with DigiLocker verification (with skip option)
+      setShowDigilockerModal(true);
       if (onRegistrationSubmitted) {
         onRegistrationSubmitted(newReg);
       }
@@ -483,6 +489,29 @@ export default function RegisterFlow({
       Alert.alert('Status Check', 'Your application is under review by the OwnMyPin team.');
     }
   };
+
+  const renderDigilockerModal = () => (
+    <DigiLockerModal
+      visible={showDigilockerModal}
+      onClose={() => setShowDigilockerModal(false)}
+      phone={phone}
+      userName={formData.fullName}
+      onVerificationSuccess={(data) => {
+        setRegistration((prev) => ({
+          ...prev,
+          is_aadhaar_verified: 1,
+          aadhaar_verified_name: data?.name || formData.fullName,
+        }));
+        if (onRegistrationSubmitted) {
+          onRegistrationSubmitted({
+            ...(registration || {}),
+            is_aadhaar_verified: 1,
+            aadhaar_verified_name: data?.name || formData.fullName,
+          });
+        }
+      }}
+    />
+  );
 
   // -------------------------------------------------------------
   // SCREEN 7: YOUR OWNMIPIN IS READY
@@ -515,9 +544,17 @@ export default function RegisterFlow({
 
           {/* Dark Navy DIGIPIN Card */}
           <View style={styles.digipinCard}>
-            <Text style={styles.applicantHeaderName}>
-              {registration?.full_name || formData.fullName}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+              <Text style={styles.applicantHeaderName}>
+                {registration?.full_name || formData.fullName}
+              </Text>
+              {registration?.is_aadhaar_verified && (
+                <View style={styles.readyDigilockerBadge}>
+                  <Image source={DIGILOCKER_LOGO} style={{ width: 14, height: 14, marginRight: 5 }} resizeMode="contain" />
+                  <Text style={styles.readyDigilockerText}>Verified by DigiLocker</Text>
+                </View>
+              )}
+            </View>
 
             <Text style={styles.digipinCode}>{pin}</Text>
 
@@ -567,6 +604,8 @@ export default function RegisterFlow({
             <Text style={styles.textButtonLabel}>Back to Welcome Screen</Text>
           </TouchableOpacity>
         </ScrollView>
+
+        {renderDigilockerModal()}
       </View>
     );
   }
@@ -619,6 +658,46 @@ export default function RegisterFlow({
             </View>
           </View>
 
+          {/* DigiLocker Identity Verification Prompt */}
+          {registration?.is_aadhaar_verified ? (
+            <View style={styles.dlSubmittedVerifiedCard}>
+              <Image source={DIGILOCKER_LOGO} style={{ width: 36, height: 36, marginRight: 12 }} resizeMode="contain" />
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.dlSubmittedVerifiedTitle}>Verified by DigiLocker</Text>
+                  <Text style={{ color: '#10B981', fontWeight: '900', fontSize: 14 }}>✓</Text>
+                </View>
+                <Text style={styles.dlSubmittedVerifiedSub}>
+                  Government Aadhaar Authenticated ({registration.aadhaar_verified_name || formData.fullName})
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.dlSubmittedActionCard}>
+              <View style={styles.dlSubmitRow}>
+                <Image source={DIGILOCKER_LOGO} style={{ width: 44, height: 44, marginRight: 12 }} resizeMode="contain" />
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                    <Text style={styles.dlSubmitCardTitle}>DigiLocker Verification</Text>
+                    <View style={styles.dlTrustTag}>
+                      <Text style={styles.dlTrustTagText}>Optional</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.dlSubmitCardSub}>
+                    Verify with Aadhaar to earn the official DigiLocker badge on your profile and get instant trust.
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.dlSubmitBtn}
+                activeOpacity={0.85}
+                onPress={() => setShowDigilockerModal(true)}
+              >
+                <Text style={styles.dlSubmitBtnText}>Verify with DigiLocker Now</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Admin Notice Callout */}
           <View style={styles.adminTipBox}>
             <Text style={styles.adminTipTitle}>💡 Admin Verification Notice</Text>
@@ -636,6 +715,8 @@ export default function RegisterFlow({
             <Text style={styles.secondaryBtnText}>Go to Home</Text>
           </TouchableOpacity>
         </ScrollView>
+
+        {renderDigilockerModal()}
       </View>
     );
   }
@@ -1029,6 +1110,8 @@ export default function RegisterFlow({
           </TouchableOpacity>
         )}
       </View>
+
+      {renderDigilockerModal()}
     </View>
   );
 }
@@ -1715,5 +1798,96 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 13,
     fontWeight: '600',
+  },
+  dlSubmittedVerifiedCard: {
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1.5,
+    borderColor: '#C7D2FE',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    width: '100%',
+  },
+  dlSubmittedVerifiedTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#312E81',
+  },
+  dlSubmittedVerifiedSub: {
+    fontSize: 12,
+    color: '#4338CA',
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  dlSubmittedActionCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#C7D2FE',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+    width: '100%',
+    shadowColor: '#1E40AF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  dlSubmitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  dlSubmitCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  dlTrustTag: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  dlTrustTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#92400E',
+    textTransform: 'uppercase',
+  },
+  dlSubmitCardSub: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 15,
+  },
+  dlSubmitBtn: {
+    backgroundColor: '#1E40AF',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  dlSubmitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  readyDigilockerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  readyDigilockerText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
   },
 });

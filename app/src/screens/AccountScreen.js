@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,15 @@ import {
   Platform,
 } from 'react-native';
 import { TRANSLATIONS } from '../constants/translations';
-import { getPinQrCodeUrl } from '../services/api';
+import { getPinQrCodeUrl, getDigilockerStatus } from '../services/api';
 import ProfileEditModal from '../components/ProfileEditModal';
 import BusinessModal from '../components/BusinessModal';
 import SubscriptionModal from '../components/SubscriptionModal';
 import InviteModal from '../components/InviteModal';
 import SocialProfilesModal from '../components/SocialProfilesModal';
+import DigiLockerModal from '../components/DigiLockerModal';
+
+const DIGILOCKER_LOGO = require('../../assets/digilocker.png');
 import {
   AccountIcon,
   StoreIcon,
@@ -62,12 +65,8 @@ export default function AccountScreen({
     });
   }
 
-  const totalPinsCount = userPins.length;
-  const activePinObj = userPins[selectedPinTab - 1] || userPins[0];
-  const currentPin = activePinObj?.pin || null;
-
-  const [privacyMode, setPrivacyMode] = useState(registration?.privacy_mode || false);
   const [selectedPinTab, setSelectedPinTab] = useState(1); // 1 | 2
+  const [privacyMode, setPrivacyMode] = useState(registration?.privacy_mode || false);
   const [isVip, setIsVip] = useState(false);
 
   // Modals
@@ -78,6 +77,45 @@ export default function AccountScreen({
   const [showSocial, setShowSocial] = useState(false);
   const [showLangModal, setShowLangModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showDigilockerModal, setShowDigilockerModal] = useState(false);
+  const [liveVerified, setLiveVerified] = useState(false);
+  const [liveVerifiedName, setLiveVerifiedName] = useState('');
+
+  const targetPhone = (user && user.phone) || (registration && registration.phone) || '';
+
+  useEffect(() => {
+    if (!targetPhone) return;
+    let isMounted = true;
+    getDigilockerStatus(targetPhone)
+      .then((res) => {
+        if (isMounted && res && res.isVerified) {
+          setLiveVerified(true);
+          if (res.verifiedName) {
+            setLiveVerifiedName(res.verifiedName);
+          }
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [targetPhone]);
+
+  const totalPinsCount = userPins.length;
+  const activePinObj = userPins[selectedPinTab - 1] || userPins[0];
+  const currentPin = activePinObj?.pin || null;
+
+  const isDigilockerVerified = Boolean(
+    liveVerified ||
+    registration?.is_aadhaar_verified ||
+    user?.is_aadhaar_verified ||
+    registration?.digilocker_verified_at
+  );
+  const aadhaarName =
+    liveVerifiedName ||
+    registration?.aadhaar_verified_name ||
+    user?.aadhaar_verified_name ||
+    '';
 
   const fullName =
     (registration && registration.full_name) || (user && user.full_name) || 'Resident';
@@ -130,6 +168,12 @@ export default function AccountScreen({
                 <VerifiedCheckIcon size={10} color="#FFFFFF" />
               </View>
             )}
+            {isDigilockerVerified && (
+              <View style={styles.digilockerBadgePill}>
+                <Image source={DIGILOCKER_LOGO} style={styles.dlMiniLogo} resizeMode="contain" />
+                <Text style={styles.dlBadgeText}>Verified</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.metaBadgesRow}>
@@ -152,6 +196,47 @@ export default function AccountScreen({
           </View>
         </View>
       </View>
+
+      {/* 1.5 DigiLocker Identity Verification Card */}
+      {isDigilockerVerified ? (
+        <View style={styles.digilockerSuccessCard}>
+          <Image source={DIGILOCKER_LOGO} style={styles.dlCardLogo} resizeMode="contain" />
+          <View style={styles.dlCardTextCol}>
+            <View style={styles.dlVerifiedRow}>
+              <Text style={styles.dlCardTitle}>Verified by DigiLocker</Text>
+              <View style={styles.dlCheckCircle}>
+                <Text style={styles.dlCheckMark}>✓</Text>
+              </View>
+            </View>
+            <Text style={styles.dlCardSub}>Government of India Aadhaar Authenticated</Text>
+            {aadhaarName ? (
+              <Text style={styles.dlAadhaarNameText}>Name: {aadhaarName}</Text>
+            ) : null}
+          </View>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.digilockerActionCard}
+          activeOpacity={0.85}
+          onPress={() => setShowDigilockerModal(true)}
+        >
+          <Image source={DIGILOCKER_LOGO} style={styles.dlCardLogo} resizeMode="contain" />
+          <View style={styles.dlCardTextCol}>
+            <View style={styles.dlActionTitleRow}>
+              <Text style={styles.dlCardActionTitle}>DigiLocker Verification</Text>
+              <View style={styles.dlTrustPill}>
+                <Text style={styles.dlTrustPillText}>Earn Trust Badge</Text>
+              </View>
+            </View>
+            <Text style={styles.dlCardActionSub}>
+              Verify with Aadhaar via DigiLocker to earn the verified trust badge on your profile and PIN.
+            </Text>
+          </View>
+          <View style={styles.dlVerifyBtnSmall}>
+            <Text style={styles.dlVerifyBtnSmallText}>Verify</Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       {/* 2. PIN Card with QR Code and Switcher (Matches Screenshot 4) */}
       <View style={styles.pinMasterCard}>
@@ -276,6 +361,32 @@ export default function AccountScreen({
             <Text style={styles.menuItemText}>Profile edit</Text>
           </View>
           <ChevronRightIcon size={16} color="#94A3B8" />
+        </TouchableOpacity>
+
+        {/* DigiLocker verification */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          activeOpacity={0.7}
+          onPress={() => setShowDigilockerModal(true)}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuIconWrap}>
+              <Image source={DIGILOCKER_LOGO} style={{ width: 17, height: 17 }} resizeMode="contain" />
+            </View>
+            <Text style={styles.menuItemText}>DigiLocker verification</Text>
+          </View>
+          <View style={styles.menuRightBadgeWrap}>
+            {isDigilockerVerified ? (
+              <View style={styles.dlMenuVerifiedBadge}>
+                <Text style={styles.dlMenuVerifiedText}>Verified ✓</Text>
+              </View>
+            ) : (
+              <View style={styles.dlMenuPendingBadge}>
+                <Text style={styles.dlMenuPendingText}>Verify now</Text>
+              </View>
+            )}
+            <ChevronRightIcon size={16} color="#94A3B8" />
+          </View>
         </TouchableOpacity>
 
         {/* Create a business */}
@@ -493,6 +604,20 @@ export default function AccountScreen({
           </View>
         </View>
       </Modal>
+
+      {/* DigiLocker Verification Modal */}
+      <DigiLockerModal
+        visible={showDigilockerModal}
+        onClose={() => setShowDigilockerModal(false)}
+        phone={(user && user.phone) || (registration && registration.phone) || ''}
+        userName={fullName}
+        onVerificationSuccess={(data) => {
+          handleSaveProfile({
+            is_aadhaar_verified: 1,
+            aadhaar_verified_name: data?.name || fullName,
+          });
+        }}
+      />
     </ScrollView>
   );
 }
@@ -995,5 +1120,168 @@ const styles = StyleSheet.create({
   modalCloseText: {
     color: '#FFFFFF',
     fontWeight: '700',
+  },
+  digilockerBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginLeft: 6,
+    gap: 4,
+  },
+  dlMiniLogo: {
+    width: 14,
+    height: 14,
+  },
+  dlBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#3730A3',
+  },
+  digilockerSuccessCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#A5B4FC',
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  digilockerActionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#C7D2FE',
+    borderStyle: 'solid',
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#1E40AF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  dlCardLogo: {
+    width: 44,
+    height: 44,
+    marginRight: 14,
+  },
+  dlCardTextCol: {
+    flex: 1,
+  },
+  dlVerifiedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  dlCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1E1B4B',
+  },
+  dlCheckCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dlCheckMark: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  dlCardSub: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#4F46E5',
+  },
+  dlAadhaarNameText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: 3,
+  },
+  dlActionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 3,
+  },
+  dlCardActionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  dlTrustPill: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  dlTrustPillText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#92400E',
+    textTransform: 'uppercase',
+  },
+  dlCardActionSub: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 15,
+  },
+  dlVerifyBtnSmall: {
+    backgroundColor: '#1E40AF',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginLeft: 10,
+  },
+  dlVerifyBtnSmallText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  dlMenuVerifiedBadge: {
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  dlMenuVerifiedText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#3730A3',
+  },
+  dlMenuPendingBadge: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  dlMenuPendingText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#B45309',
   },
 });

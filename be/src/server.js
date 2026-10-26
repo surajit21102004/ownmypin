@@ -18,14 +18,18 @@ const PORT = process.env.PORT || 5000;
 
 function getLocalIp() {
   const interfaces = os.networkInterfaces();
+  const allIps = [];
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
       if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
+        if (/wi-?fi/i.test(name) || iface.address.startsWith('192.168.')) {
+          return iface.address;
+        }
+        allIps.push(iface.address);
       }
     }
   }
-  return '127.0.0.1';
+  return allIps[0] || '127.0.0.1';
 }
 
 // Security & Utility Middleware
@@ -47,6 +51,12 @@ if (process.env.NODE_ENV !== 'test') {
 const adminPath = path.join(__dirname, '../../admin');
 app.use('/admin', express.static(adminPath));
 app.use('/startupindia.png', express.static(path.join(adminPath, 'startupindia.png')));
+app.use('/digilocker.png', express.static(path.join(adminPath, 'digilocker.png')));
+
+const { handleBrowserRedirect } = require('./controllers/digilocker.controller');
+app.get('/callback', handleBrowserRedirect);
+app.get('/digilocker-callback', handleBrowserRedirect);
+app.get('/digilocker/callback', handleBrowserRedirect);
 
 // Serve Uploaded Files statically with cross-origin & private-network permission
 const uploadsPath = path.join(__dirname, '../uploads');

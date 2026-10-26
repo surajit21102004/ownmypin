@@ -96,6 +96,8 @@ function formatProfileRow(result, req) {
     ownerName: result.owner_name || null,
     isBusiness: isBusiness,
     verified: result.status === 'approved',
+    isDigilockerVerified: Boolean(result.is_aadhaar_verified || result.is_digilocker_verified),
+    aadhaarVerifiedName: result.aadhaar_verified_name || null,
     location: `${result.city || 'Rishra'}, ${result.district || 'Hooghly'}, ${result.state || 'West Bengal'}`,
     rating: isBusiness ? 4.9 : 4.8,
     addressLine: result.address_line,
@@ -430,7 +432,10 @@ async function getPinRecord(rawQuery) {
         r.longitude,
         r.selfie_url,
         r.property_photos,
-        r.status
+        r.status,
+        r.is_aadhaar_verified,
+        r.aadhaar_verified_name,
+        r.digilocker_record_id
       FROM pins p
       JOIN registrations r ON p.registration_id = r.id
       WHERE p.pin_code = ? OR p.pin_code LIKE ?
@@ -463,7 +468,10 @@ async function getPinRecord(rawQuery) {
         longitude,
         selfie_url,
         property_photos,
-        status
+        status,
+        is_aadhaar_verified,
+        aadhaar_verified_name,
+        digilocker_record_id
       FROM registrations
       WHERE pin_code = ? OR pin_code LIKE ?
       LIMIT 1`,
@@ -608,6 +616,8 @@ async function renderLocationPage(req, res, next) {
     const address = `${record.address_line || ''}, ${record.city || ''}, ${record.district || ''}, ${record.state || ''} ${record.pincode || ''}`.replace(/^[,\s]+|[,\s]+$/g, '');
     const landmark = record.landmark || 'Near Main Road';
     const propertyType = `${record.property_type || 'Residential'} • ${record.ownership_type || 'Verified'}`;
+    const isDigilockerVerified = Boolean(record.is_aadhaar_verified);
+    const aadhaarVerifiedName = record.aadhaar_verified_name || null;
     const mapsNavUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     const deepLinkUrl = `ownmypin://pin?code=${encodeURIComponent(cleanPin)}`;
 
@@ -746,6 +756,24 @@ async function renderLocationPage(req, res, next) {
       font-weight: 700;
       padding: 4px 10px;
       border-radius: 12px;
+    }
+    .pin-digilocker-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 1.5px solid #6366f1;
+      color: #312e81;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .pin-digilocker-badge img {
+      width: 15px;
+      height: 15px;
+      object-fit: contain;
     }
     .pin-label-title {
       font-size: 13px;
@@ -963,7 +991,14 @@ async function renderLocationPage(req, res, next) {
     <section class="pin-hero-card">
       <div class="pin-top-meta">
         <span class="pin-type-pill">DIGIPIN · DOORSTEP STANDARD</span>
-        <span class="pin-verified-badge">✓ ACTIVE & VERIFIED</span>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          ${isDigilockerVerified ? `
+          <span class="pin-digilocker-badge">
+            <img src="/digilocker.png" alt="DigiLocker" />
+            Verified by DigiLocker
+          </span>` : ''}
+          <span class="pin-verified-badge">✓ ACTIVE & VERIFIED</span>
+        </div>
       </div>
 
       <div class="pin-label-title">UNIQUE DOORSTEP DIGITAL PIN</div>
@@ -986,6 +1021,15 @@ async function renderLocationPage(req, res, next) {
         <span>🏠</span> Doorstep Address Details
       </div>
       <div class="detail-grid">
+        ${isDigilockerVerified ? `
+        <div class="detail-row" style="background: rgba(99, 102, 241, 0.08); padding: 10px 14px; border-radius: 12px; border: 1.5px solid rgba(99, 102, 241, 0.25); margin-bottom: 8px;">
+          <span class="detail-label" style="color: #4338ca; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+            <img src="/digilocker.png" style="width: 18px; height: 18px; object-fit: contain;" /> DigiLocker Verified
+          </span>
+          <span class="detail-val" style="color: #312e81; font-weight: 800;">
+            Government ID Confirmed ${aadhaarVerifiedName ? `(${aadhaarVerifiedName})` : ''}
+          </span>
+        </div>` : ''}
         <div class="detail-row">
           <span class="detail-label">Owner / Resident</span>
           <span class="detail-val">${fullName}</span>

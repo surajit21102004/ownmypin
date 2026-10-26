@@ -59,7 +59,7 @@ async function verifyOtp(req, res, next) {
 
     // Find or create user
     const [existingUsers] = await pool.query(
-      'SELECT id, phone, full_name, role, shop_name, is_verified, password FROM users WHERE phone = ? LIMIT 1',
+      'SELECT id, phone, full_name, role, shop_name, is_verified, password, is_aadhaar_verified, aadhaar_verified_name, digilocker_record_id FROM users WHERE phone = ? LIMIT 1',
       [cleanPhone]
     );
 
@@ -105,6 +105,8 @@ async function verifyOtp(req, res, next) {
         full_name: fullName || null,
         shop_name: shopName || null,
         is_verified: true,
+        is_aadhaar_verified: false,
+        aadhaar_verified_name: null,
       };
     }
 
@@ -151,7 +153,7 @@ async function loginWithPassword(req, res, next) {
     const cleanPhone = phone.trim();
 
     const [users] = await pool.query(
-      'SELECT id, phone, full_name, role, shop_name, is_verified, password FROM users WHERE phone = ? LIMIT 1',
+      'SELECT id, phone, full_name, role, shop_name, is_verified, password, is_aadhaar_verified, aadhaar_verified_name, digilocker_record_id FROM users WHERE phone = ? LIMIT 1',
       [cleanPhone]
     );
 
@@ -203,6 +205,9 @@ async function loginWithPassword(req, res, next) {
         role: user.role,
         shop_name: user.shop_name,
         is_verified: user.is_verified,
+        is_aadhaar_verified: !!user.is_aadhaar_verified,
+        aadhaar_verified_name: user.aadhaar_verified_name,
+        digilocker_record_id: user.digilocker_record_id,
       },
       registration,
       businessRegistration,
